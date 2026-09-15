@@ -97,6 +97,13 @@ class TreadmillViewModel @Inject constructor(
 
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     fun connect(device: DiscoveredTreadmill) {
+        // Un second appui pendant la connexion ouvrirait une deuxieme liaison GATT vers la
+        // meme machine, que plus rien ne refermerait ensuite.
+        if (_uiState.value.connection != TreadmillConnectionState.Disconnected &&
+            _uiState.value.connection !is TreadmillConnectionState.Failed
+        ) {
+            return
+        }
         stopScan()
         viewModelScope.launch { client.connect(device.address) }
     }

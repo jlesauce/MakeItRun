@@ -5,19 +5,25 @@ import android.content.Context
 import androidx.annotation.RequiresPermission
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
 import no.nordicsemi.android.kotlin.ble.client.main.callback.ClientBleGatt
 import no.nordicsemi.android.kotlin.ble.client.main.service.ClientBleGattCharacteristic
 import no.nordicsemi.android.kotlin.ble.core.data.BleWriteType
 import no.nordicsemi.android.kotlin.ble.core.data.GattConnectionState
 import no.nordicsemi.android.kotlin.ble.core.data.util.DataByteArray
+import timber.log.Timber
 import kotlin.math.roundToInt
 
 /**
@@ -52,8 +58,11 @@ class FtmsTreadmillClient(
     private var controlPoint: ClientBleGattCharacteristic? = null
     private val observerJobs = mutableListOf<Job>()
 
+    /** Serialise les connexions : deux appuis rapproches creeraient sinon deux clients GATT. */
+    private val connectionMutex = Mutex()
+
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
-    suspend fun connect(address: String) {
+    suspend fun connect(address: String) = connectionMutex.withLock {
         disconnect()
         _connectionState.value = TreadmillConnectionState.Connecting
 
@@ -78,6 +87,7 @@ class FtmsTreadmillClient(
             controlPoint = service.findCharacteristic(FtmsUuids.FITNESS_MACHINE_CONTROL_POINT)
                 ?.also { observeControlResponses(it) }
 
+            Timber.i("Connecte a %s, pilotage %s", address, if (controlPoint != null) "disponible" else "indisponible")
             _connectionState.value = TreadmillConnectionState.Connected(
                 address = address,
                 canBeControlled = controlPoint != null,
@@ -85,6 +95,7 @@ class FtmsTreadmillClient(
         } catch (cancellation: CancellationException) {
             throw cancellation
         } catch (error: Exception) {
+            Timber.e(error, "Echec de la connexion a %s", address)
             disconnect()
             _connectionState.value = TreadmillConnectionState.Failed(
                 error.message ?: error::class.java.simpleName
@@ -96,9 +107,11 @@ class FtmsTreadmillClient(
         observerJobs.forEach { it.cancel() }
         observerJobs.clear()
         controlPoint = null
-        gatt?.let {
-            if (it.isConnected) it.disconnect()
-            it.close()
+        gatt?.let { client ->
+            runCatching {
+                if (client.isConnected) client.disconnect()
+                client.close()
+            }.onFailure { Timber.d(it, "Fermeture de la liaison GATT") }
         }
         gatt = null
         _treadmillData.value = null
@@ -153,6 +166,10 @@ class FtmsTreadmillClient(
     /**
      * Ecrit une commande puis attend l'indication de reponse correspondante.
      *
+     * L'attente est mise en place **avant** l'ecriture, et demarree sans redispatch, faute de quoi
+     * une machine qui repond tres vite pourrait emettre sa reponse avant que le collecteur ne soit
+     * en place : le flux de reponses ne rejoue rien, la reponse serait alors perdue.
+     *
      * @return la reponse de la machine, ou `null` si le Control Point est absent ou si la
      * machine n'a pas repondu dans le delai imparti.
      */
@@ -160,26 +177,41 @@ class FtmsTreadmillClient(
         val characteristic = controlPoint ?: return null
         val sentOpCode = FtmsOpCode.fromValue(command.value[0])
 
-        characteristic.write(command, BleWriteType.DEFAULT)
+        return coroutineScope {
+            val pendingResponse = async(start = CoroutineStart.UNDISPATCHED) {
+                withTimeoutOrNull(CONTROL_RESPONSE_TIMEOUT_MS) {
+                    _controlResponses.first { it.requestOpCode == sentOpCode }
+                }
+            }
 
-        return withTimeoutOrNull(CONTROL_RESPONSE_TIMEOUT_MS) {
-            controlResponses.first { it.requestOpCode == sentOpCode }
+            Timber.d("Control Point -> %s", command.value.toHexString())
+            characteristic.write(command, BleWriteType.DEFAULT)
+
+            pendingResponse.await()
         }
     }
 
     private fun observeTreadmillData(characteristic: ClientBleGattCharacteristic) {
         observerJobs += scope.launch {
-            characteristic.getNotifications().collect { frame ->
-                _lastRawFrame.value = frame.value.toHexString()
-                TreadmillDataParser.parse(frame.value)?.let { _treadmillData.value = it }
+            collectUntilDisconnected("mesures du tapis") {
+                characteristic.getNotifications().collect { frame ->
+                    val hex = frame.value.toHexString()
+                    _lastRawFrame.value = hex
+                    val data = TreadmillDataParser.parse(frame.value)
+                    Timber.d("Treadmill Data <- %s | %s", hex, data?.summary() ?: "trame illisible")
+                    data?.let { _treadmillData.value = it }
+                }
             }
         }
     }
 
     private fun observeControlResponses(characteristic: ClientBleGattCharacteristic) {
         observerJobs += scope.launch {
-            characteristic.getNotifications().collect { frame ->
-                FtmsControlResponse.parse(frame.value)?.let { _controlResponses.emit(it) }
+            collectUntilDisconnected("reponses de pilotage") {
+                characteristic.getNotifications().collect { frame ->
+                    Timber.d("Control Point <- %s", frame.value.toHexString())
+                    FtmsControlResponse.parse(frame.value)?.let { _controlResponses.emit(it) }
+                }
             }
         }
     }
@@ -195,6 +227,30 @@ class FtmsTreadmillClient(
                 }
             }
         }
+    }
+
+    /**
+     * A la fermeture d'un flux de notifications, la bibliotheque Bluetooth tente de desactiver
+     * les notifications sur la machine. Si le GATT vient d'etre ferme, cette derniere operation
+     * echoue : c'est attendu lors d'une deconnexion, et cela ne doit pas remonter jusqu'au
+     * gestionnaire d'exceptions par defaut, qui arreterait l'application.
+     */
+    private suspend fun collectUntilDisconnected(label: String, block: suspend () -> Unit) {
+        try {
+            block()
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (error: Exception) {
+            Timber.d(error, "Fin de l'abonnement aux %s", label)
+        }
+    }
+
+    private fun TreadmillData.summary(): String = buildString {
+        append("vitesse=").append(instantaneousSpeedKmh ?: "-")
+        append(" distance=").append(totalDistanceMeters ?: "-")
+        append(" temps=").append(elapsedTimeSeconds ?: "-")
+        append(" pente=").append(inclinationPercent ?: "-")
+        append(" fc=").append(heartRateBpm ?: "-")
     }
 
     private fun Int.lowByte(): Byte = (this and 0xFF).toByte()

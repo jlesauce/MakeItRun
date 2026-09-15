@@ -6,11 +6,13 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import org.jls.makeitrun.ftms.FtmsScanner
 import org.jls.makeitrun.ftms.FtmsTreadmillClient
+import timber.log.Timber
 import javax.inject.Singleton
 
 @Module
@@ -32,6 +34,14 @@ object FtmsModule {
     fun provideFtmsTreadmillClient(@ApplicationContext context: Context): FtmsTreadmillClient =
         FtmsTreadmillClient(
             context = context,
-            scope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
+            scope = CoroutineScope(
+                SupervisorJob() +
+                    Dispatchers.IO +
+                    // Filet de securite : une erreur Bluetooth imprevue doit apparaitre dans les
+                    // journaux, jamais arreter l'application au milieu d'une seance.
+                    CoroutineExceptionHandler { _, error ->
+                        Timber.e(error, "Erreur non geree dans la liaison FTMS")
+                    }
+            ),
         )
 }

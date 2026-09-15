@@ -1,0 +1,5 @@
+<resources>
+    <!-- L'interface est entierement en Compose : ce theme XML sert uniquement de theme
+         systeme pour la fenetre de l'Activity (avant que Compose ne prenne la main). -->
+    <style name="Theme.MakeItRun" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>

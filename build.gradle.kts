@@ -1,3 +1,8 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+
+// Depuis AGP 9, le support de Kotlin est integre : le plugin "kotlin-android" ne doit plus etre
+// applique. AGP embarque sa propre version de Kotlin (2.2.10), qu'on releve ici vers une version
+// plus recente selon la procedure decrite sur https://kotl.in/gradle/agp-built-in-kotlin
 buildscript {
     dependencies {
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${libs.versions.kotlin.get()}")

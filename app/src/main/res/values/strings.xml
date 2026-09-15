@@ -1,4 +1,52 @@
 <resources>
     <string name="app_name">Make It Run</string>
-    <string name="placeholder_subtitle">Configuration du projet terminee</string>
+
+    <!-- Permissions -->
+    <string name="permission_title">Autorisation Bluetooth requise</string>
+    <string name="permission_rationale">Make It Run a besoin du Bluetooth pour détecter votre tapis de course et lui transmettre vos entraînements.</string>
+    <string name="permission_grant">Autoriser</string>
+
+    <!-- Recherche d\'appareils -->
+    <string name="scan_start">Rechercher un tapis</string>
+    <string name="scan_stop">Arrêter la recherche</string>
+    <string name="scan_show_all">Afficher tous les appareils Bluetooth</string>
+    <string name="scan_show_all_hint">À n\'utiliser que si votre tapis n\'apparaît pas : certains appareils n\'annoncent pas le service FTMS avant la connexion.</string>
+    <string name="scan_searching">Recherche en cours…</string>
+    <string name="scan_empty">Aucun appareil détecté. Vérifiez que le tapis est allumé et à portée.</string>
+    <string name="device_unknown_name">Appareil sans nom</string>
+    <string name="device_rssi">%1$d dBm</string>
+    <string name="device_supports_ftms">FTMS</string>
+
+    <!-- États de connexion -->
+    <string name="status_disconnected">Déconnecté</string>
+    <string name="status_connecting">Connexion…</string>
+    <string name="status_discovering">Découverte des services…</string>
+    <string name="status_connected">Connecté à %1$s</string>
+    <string name="status_failed">Échec : %1$s</string>
+    <string name="status_read_only">Ce tapis ne peut pas être piloté à distance.</string>
+    <string name="disconnect">Se déconnecter</string>
+
+    <!-- Mesures -->
+    <string name="metrics_title">Mesures en direct</string>
+    <string name="metric_speed">Vitesse</string>
+    <string name="metric_pace">Allure</string>
+    <string name="metric_distance">Distance</string>
+    <string name="metric_time">Temps écoulé</string>
+    <string name="metric_inclination">Inclinaison</string>
+    <string name="metric_heart_rate">Fréquence cardiaque</string>
+    <string name="metric_energy">Dépense</string>
+    <string name="metric_waiting">En attente des premières mesures du tapis…</string>
+    <string name="value_unavailable">—</string>
+
+    <!-- Pilotage -->
+    <string name="control_title">Pilotage</string>
+    <string name="control_request">Prendre le contrôle</string>
+    <string name="control_start">Démarrer</string>
+    <string name="control_stop">Arrêter</string>
+    <string name="control_target_speed">Vitesse cible : %1$s km/h</string>
+    <string name="control_apply_speed">Appliquer la vitesse</string>
+
+    <!-- Diagnostic -->
+    <string name="raw_frame_title">Dernière trame reçue</string>
+    <string name="raw_frame_hint">Utile pour comparer le décodage avec la spécification FTMS.</string>
 </resources>

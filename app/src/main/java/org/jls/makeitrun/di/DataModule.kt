@@ -9,6 +9,8 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import kotlinx.serialization.json.Json
 import org.jls.makeitrun.data.MakeItRunDatabase
+import org.jls.makeitrun.data.TreadmillProfileRepository
+import org.jls.makeitrun.data.TreadmillProfileStore
 import org.jls.makeitrun.data.WorkoutDao
 import javax.inject.Singleton
 
@@ -28,8 +30,14 @@ object DataModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): MakeItRunDatabase =
         Room.databaseBuilder(context, MakeItRunDatabase::class.java, MakeItRunDatabase.NAME)
+            .addMigrations(*MakeItRunDatabase.MIGRATIONS)
             .build()
 
     @Provides
     fun provideWorkoutDao(database: MakeItRunDatabase): WorkoutDao = database.workoutDao()
+
+    @Provides
+    fun provideTreadmillProfileStore(
+        repository: TreadmillProfileRepository,
+    ): TreadmillProfileStore = repository
 }

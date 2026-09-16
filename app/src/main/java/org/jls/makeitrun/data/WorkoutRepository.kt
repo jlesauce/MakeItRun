@@ -32,6 +32,12 @@ class WorkoutRepository @Inject constructor(
 
     suspend fun delete(id: Long) = dao.deleteById(id)
 
+    suspend fun findAll(): List<Workout> = dao.findAll().map { it.toWorkout() }
+
+    suspend fun saveAll(workouts: List<Workout>) {
+        dao.insertAll(workouts.map { it.toEntity() })
+    }
+
     private fun Workout.toEntity() = WorkoutEntity(
         id = id,
         name = name,

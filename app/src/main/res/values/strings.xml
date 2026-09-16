@@ -150,8 +150,30 @@
     <string name="settings_language_english" translatable="false">English</string>
     <string name="settings_language_french" translatable="false">Français</string>
 
+    <string name="settings_backup_title">Backup</string>
+    <string name="settings_backup_summary">Save your workouts and your treadmill profile to a file that you keep yourself. It survives uninstalling the app, and importing it adds its workouts to the existing ones.</string>
+    <string name="settings_backup_export">Export my workouts</string>
+    <string name="settings_backup_import">Import workouts</string>
+    <plurals name="backup_exported">
+        <item quantity="one">%1$d workout exported</item>
+        <item quantity="other">%1$d workouts exported</item>
+    </plurals>
+    <plurals name="backup_imported">
+        <item quantity="one">%1$d workout imported</item>
+        <item quantity="other">%1$d workouts imported</item>
+    </plurals>
+    <plurals name="backup_imported_with_treadmill">
+        <item quantity="one">%1$d workout imported, along with the treadmill profile</item>
+        <item quantity="other">%1$d workouts imported, along with the treadmill profile</item>
+    </plurals>
+    <string name="backup_treadmill_conflict_title">Which treadmill should be kept?</string>
+    <string name="backup_treadmill_conflict_message">This backup holds the profile for \"%1$s\", while your phone already knows \"%2$s\". Your workouts will be imported either way.</string>
+    <string name="backup_treadmill_keep_current">Keep the current one</string>
+    <string name="backup_treadmill_use_backup">Take the one from the backup</string>
+    <string name="backup_export_failed">The workouts could not be saved.</string>
+    <string name="backup_import_failed">This file is not a Make It Run backup.</string>
+
     <string name="about_title">About</string>
-    <string name="about_tagline">Your interval workouts, driven straight on the treadmill.</string>
     <string name="about_version">Version %1$s</string>
     <string name="about_author_section">Author</string>
     <string name="about_contact_section">Contact</string>

@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -19,13 +20,20 @@ import javax.inject.Singleton
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore("treadmill_profile")
 
+interface TreadmillProfileStore {
+    val profile: Flow<TreadmillProfile>
+    suspend fun current(): TreadmillProfile
+    suspend fun rememberTreadmill(address: String, name: String?, capabilities: TreadmillCapabilities?)
+    suspend fun setShowPaceInsteadOfSpeed(showPace: Boolean)
+}
+
 @Singleton
 class TreadmillProfileRepository @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val json: Json,
-) {
+) : TreadmillProfileStore {
 
-    val profile: Flow<TreadmillProfile> = context.dataStore.data.map { preferences ->
+    override val profile: Flow<TreadmillProfile> = context.dataStore.data.map { preferences ->
         TreadmillProfile(
             address = preferences[KEY_ADDRESS],
             name = preferences[KEY_NAME],
@@ -34,7 +42,9 @@ class TreadmillProfileRepository @Inject constructor(
         )
     }
 
-    suspend fun rememberTreadmill(
+    override suspend fun current(): TreadmillProfile = profile.first()
+
+    override suspend fun rememberTreadmill(
         address: String,
         name: String?,
         capabilities: TreadmillCapabilities?,
@@ -46,7 +56,7 @@ class TreadmillProfileRepository @Inject constructor(
         }
     }
 
-    suspend fun setShowPaceInsteadOfSpeed(showPace: Boolean) {
+    override suspend fun setShowPaceInsteadOfSpeed(showPace: Boolean) {
         context.dataStore.edit { it[KEY_SHOW_PACE] = showPace }
     }
 

@@ -147,8 +147,30 @@
     <string name="settings_language_summary">Par défaut, Make It Run suit la langue du téléphone et bascule en anglais lorsque celle-ci n\'est pas disponible.</string>
     <string name="settings_language_system">Langue du téléphone</string>
 
+    <string name="settings_backup_title">Sauvegarde</string>
+    <string name="settings_backup_summary">Enregistrez vos entraînements et le profil de votre tapis dans un fichier que vous conservez vous-même. Il survit à la désinstallation de l\'application, et son import ajoute ses entraînements à ceux déjà présents.</string>
+    <string name="settings_backup_export">Exporter mes entraînements</string>
+    <string name="settings_backup_import">Importer des entraînements</string>
+    <plurals name="backup_exported">
+        <item quantity="one">%1$d entraînement exporté</item>
+        <item quantity="other">%1$d entraînements exportés</item>
+    </plurals>
+    <plurals name="backup_imported">
+        <item quantity="one">%1$d entraînement importé</item>
+        <item quantity="other">%1$d entraînements importés</item>
+    </plurals>
+    <plurals name="backup_imported_with_treadmill">
+        <item quantity="one">%1$d entraînement importé, ainsi que le profil du tapis</item>
+        <item quantity="other">%1$d entraînements importés, ainsi que le profil du tapis</item>
+    </plurals>
+    <string name="backup_treadmill_conflict_title">Quel tapis garder ?</string>
+    <string name="backup_treadmill_conflict_message">Cette sauvegarde contient le profil de « %1$s », alors que votre téléphone connaît déjà « %2$s ». Vos entraînements seront importés dans les deux cas.</string>
+    <string name="backup_treadmill_keep_current">Garder l\'actuel</string>
+    <string name="backup_treadmill_use_backup">Prendre celui de la sauvegarde</string>
+    <string name="backup_export_failed">Les entraînements n\'ont pas pu être enregistrés.</string>
+    <string name="backup_import_failed">Ce fichier n\'est pas une sauvegarde Make It Run.</string>
+
     <string name="about_title">À propos</string>
-    <string name="about_tagline">Vos séances fractionnées, pilotées directement sur le tapis.</string>
     <string name="about_version">Version %1$s</string>
     <string name="about_author_section">Auteur</string>
     <string name="about_contact_section">Contact</string>

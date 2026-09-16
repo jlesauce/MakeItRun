@@ -35,6 +35,7 @@ google-services.json
 .idea/androidTestResultsUserPreferences.xml
 .idea/migrations.xml
 .idea/jarRepositories.xml
+.idea/markdown.xml
 
 .DS_Store
 Thumbs.db

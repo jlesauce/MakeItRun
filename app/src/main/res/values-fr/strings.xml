@@ -7,6 +7,8 @@
     <string name="menu_settings">Paramètres</string>
     <string name="menu_about">À propos</string>
     <string name="action_back">Retour</string>
+    <string name="action_understood">J\'ai compris</string>
+
     <string name="permission_title">Autorisation Bluetooth requise</string>
     <string name="permission_rationale">Make It Run a besoin du Bluetooth pour détecter votre tapis de course et lui transmettre vos entraînements.</string>
     <string name="permission_grant">Autoriser</string>
@@ -41,6 +43,7 @@
 
     <string name="workouts_section">Mes entraînements :</string>
     <string name="workouts_empty">Aucun entraînement pour l\'instant. Touchez « + » pour en créer un.</string>
+    <string name="workouts_locked_title">Tapis pas encore connu</string>
     <string name="workouts_locked">Connectez votre tapis une première fois pour pouvoir créer un entraînement : Make It Run a besoin de connaître ses vitesses et ses réglages.</string>
     <string name="workouts_create">Créer un entraînement</string>
     <string name="workout_summary_line">%1$s · %2$s</string>
@@ -114,7 +117,7 @@
     <string name="session_total">Total : %1$s · %2$s</string>
     <string name="session_pause">Pause</string>
     <string name="session_resume">Reprendre</string>
-    <string name="session_stop">Arrêt d\'urgence</string>
+    <string name="session_stop">Arrêt</string>
     <string name="session_finished">Séance terminée</string>
     <string name="session_finished_summary">%1$s parcourus en %2$s</string>
     <string name="session_close">Fermer</string>

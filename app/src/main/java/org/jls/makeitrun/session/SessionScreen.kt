@@ -2,9 +2,12 @@ package org.jls.makeitrun.session
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -125,7 +128,7 @@ private fun Countdown(seconds: Int) {
 }
 
 @Composable
-private fun RunningSession(
+private fun ColumnScope.RunningSession(
     progress: SessionProgress,
     showPace: Boolean,
     isPaused: Boolean,
@@ -222,12 +225,15 @@ private fun RunningSession(
     )
 
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .weight(1f)
+            .heightIn(min = 96.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         OutlinedButton(
             onClick = if (isPaused) onResume else onPause,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.fillMaxHeight(),
         ) {
             Text(
                 stringResource(if (isPaused) R.string.session_resume else R.string.session_pause)
@@ -238,9 +244,14 @@ private fun RunningSession(
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.error,
             ),
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight(),
         ) {
-            Text(stringResource(R.string.session_stop))
+            Text(
+                text = stringResource(R.string.session_stop),
+                style = MaterialTheme.typography.headlineMedium,
+            )
         }
     }
 }

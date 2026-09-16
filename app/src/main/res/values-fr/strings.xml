@@ -1,0 +1,159 @@
+<resources>
+
+    <string name="tab_workouts">Entraînements</string>
+    <string name="tab_debug">Debug</string>
+
+    <string name="menu_more">Plus d\'options</string>
+    <string name="menu_settings">Paramètres</string>
+    <string name="menu_about">À propos</string>
+    <string name="action_back">Retour</string>
+
+    <string name="permission_title">Autorisation Bluetooth requise</string>
+    <string name="permission_rationale">Make It Run a besoin du Bluetooth pour détecter votre tapis de course et lui transmettre vos entraînements.</string>
+    <string name="permission_grant">Autoriser</string>
+
+    <string name="connection_connected">%1$s</string>
+    <string name="connection_disconnected">Tapis non connecté</string>
+    <string name="connection_connecting">Connexion en cours…</string>
+    <string name="connection_discovering">Lecture des capacités…</string>
+    <string name="connection_failed">Échec : %1$s</string>
+    <string name="connection_search">Rechercher</string>
+    <string name="connection_reconnect">Reconnecter</string>
+    <string name="connection_disconnect">Déconnecter</string>
+    <string name="connection_cancel">Annuler</string>
+    <string name="connection_searching">Recherche en cours…</string>
+    <string name="connection_no_device">Aucun tapis détecté. Vérifiez qu\'il est allumé et qu\'aucune autre application n\'y est connectée.</string>
+    <string name="connection_show_all">Afficher tous les appareils Bluetooth</string>
+    <string name="connection_led_description">Indicateur de connexion</string>
+    <string name="device_unknown_name">Appareil sans nom</string>
+    <string name="device_rssi">%1$d dBm</string>
+    <string name="device_supports_ftms">FTMS</string>
+
+    <string name="workouts_section">Mes entraînements :</string>
+    <string name="workouts_empty">Aucun entraînement pour l\'instant. Touchez « + » pour en créer un.</string>
+    <string name="workouts_locked">Connectez votre tapis une première fois pour pouvoir créer un entraînement : Make It Run a besoin de connaître ses vitesses et ses réglages.</string>
+    <string name="workouts_create">Créer un entraînement</string>
+    <string name="workout_summary_line">%1$s · %2$s</string>
+    <plurals name="workout_step_count">
+        <item quantity="one">%1$d étape</item>
+        <item quantity="other">%1$d étapes</item>
+    </plurals>
+
+    <string name="workout_detail_title">Résumé</string>
+    <string name="workout_detail_start">Lancer sur le tapis</string>
+    <string name="workout_detail_edit">Modifier</string>
+    <string name="workout_detail_delete">Supprimer</string>
+    <string name="workout_detail_needs_connection">Connectez le tapis pour lancer cet entraînement.</string>
+    <string name="workout_detail_estimate_partial">Estimation partielle : certaines étapes n\'ont pas d\'allure cible.</string>
+
+    <string name="editor_title_new">Nouvel entraînement</string>
+    <string name="editor_title_edit">Modifier l\'entraînement</string>
+    <string name="editor_name">Nom de l\'entraînement</string>
+    <string name="editor_add_step">Ajouter une étape</string>
+    <string name="editor_add_repeat">Ajouter un bloc répété</string>
+    <string name="editor_save">Enregistrer</string>
+    <string name="editor_empty">Ajoutez une première étape pour commencer.</string>
+    <string name="editor_repetitions">Répétitions</string>
+    <string name="editor_add_step_to_block">Ajouter une étape au bloc</string>
+    <string name="editor_move_up">Monter</string>
+    <string name="editor_move_down">Descendre</string>
+    <string name="editor_delete">Supprimer</string>
+    <string name="editor_step_type">Type d\'étape</string>
+    <string name="editor_duration_mode">Fin de l\'étape</string>
+    <string name="editor_duration_time">Durée</string>
+    <string name="editor_duration_distance">Distance</string>
+    <string name="editor_minutes">Minutes</string>
+    <string name="editor_seconds">Secondes</string>
+    <string name="editor_metres">Mètres</string>
+    <string name="editor_target_title_pace">Allure cible</string>
+    <string name="editor_target_title_speed">Vitesse cible</string>
+    <string name="editor_target_hint">Allure que Make It Run imposera au tapis pendant cette étape. « Libre » laisse le tapis à la vitesse du moment, sans lui envoyer de consigne.</string>
+    <string name="editor_target_fixed">Imposée</string>
+    <string name="editor_target_free">Libre</string>
+    <string name="editor_unit_pace">Allure (min/km)</string>
+    <string name="editor_unit_speed">Vitesse (km/h)</string>
+    <string name="editor_inclination">Inclinaison (%%)</string>
+    <string name="editor_speed_bounds">Votre tapis accepte de %1$s à %2$s km/h.</string>
+    <string name="editor_target_manual_pace">Saisir l\'allure</string>
+    <string name="editor_target_manual_speed">Saisir la vitesse</string>
+    <string name="editor_target_manual_hint">Touchez la valeur pour la saisir au clavier.</string>
+    <string name="editor_speed_field">km/h</string>
+    <string name="editor_done">Valider</string>
+    <string name="editor_cancel">Annuler</string>
+
+    <string name="step_type_warm_up">Échauffement</string>
+    <string name="step_type_run">Effort</string>
+    <string name="step_type_recover">Récupération</string>
+    <string name="step_type_cool_down">Retour au calme</string>
+
+    <string name="session_title">Séance</string>
+    <string name="session_countdown">Préparez-vous</string>
+    <string name="session_step_progress">Étape %1$d sur %2$d</string>
+    <string name="session_repetition">Répétition %1$d sur %2$d</string>
+    <string name="session_next_step">Ensuite : %1$s</string>
+    <string name="session_target">Consigne</string>
+    <string name="session_actual">Vitesse réelle</string>
+    <string name="session_remaining_time">Temps restant</string>
+    <string name="session_remaining_distance">Distance restante</string>
+    <string name="session_total">Total : %1$s · %2$s</string>
+    <string name="session_pause">Pause</string>
+    <string name="session_resume">Reprendre</string>
+    <string name="session_stop">Arrêt d\'urgence</string>
+    <string name="session_finished">Séance terminée</string>
+    <string name="session_finished_summary">%1$s parcourus en %2$s</string>
+    <string name="session_close">Fermer</string>
+    <string name="session_free_pace">Allure libre</string>
+
+    <string name="session_channel_name">Séance en cours</string>
+    <string name="session_preparing">Préparation de la séance…</string>
+    <string name="session_countdown_notification">Départ dans %1$d s</string>
+    <string name="session_running_notification">Étape %1$d sur %2$d</string>
+    <string name="session_paused_notification">Séance en pause</string>
+
+    <string name="metrics_title">Mesures en direct</string>
+    <string name="metric_speed">Vitesse</string>
+    <string name="metric_pace">Allure</string>
+    <string name="metric_distance">Distance</string>
+    <string name="metric_time">Temps écoulé</string>
+    <string name="metric_inclination">Inclinaison</string>
+    <string name="metric_heart_rate">Fréquence cardiaque</string>
+    <string name="metric_energy">Dépense</string>
+    <string name="metric_waiting">En attente des premières mesures du tapis…</string>
+    <string name="value_unavailable">—</string>
+
+    <string name="control_title">Pilotage manuel</string>
+    <string name="control_request">Prendre le contrôle</string>
+    <string name="control_request_hint">Le protocole FTMS impose de réclamer la main sur la machine avant toute commande. Tant que ce n\'est pas fait, le tapis refuse le démarrage, la vitesse et la pente. À refaire si le tapis a été utilisé depuis son propre écran.</string>
+    <string name="control_start">Démarrer</string>
+    <string name="control_stop">Arrêter</string>
+    <string name="control_target_speed">Vitesse cible : %1$s km/h</string>
+    <string name="control_apply_speed">Appliquer la vitesse</string>
+    <string name="control_target_inclination">Pente cible : %1$s %%</string>
+    <string name="control_apply_inclination">Appliquer la pente</string>
+    <string name="control_inclination_undeclared">Ce tapis ne déclare pas savoir régler sa pente à distance. Le curseur reste actif pour essayer quand même : la machine répondra qu\'elle refuse si elle ne sait pas le faire.</string>
+
+    <string name="capabilities_title">Capacités déclarées</string>
+    <string name="capabilities_speed">Vitesse : %1$s à %2$s km/h (pas de %3$s)</string>
+    <string name="capabilities_inclination">Pente : %1$s à %2$s %%</string>
+    <string name="capabilities_no_inclination">Pente non pilotable à distance</string>
+    <string name="capabilities_unknown">Aucun tapis connecté pour l\'instant.</string>
+
+    <string name="raw_frame_title">Dernière trame reçue</string>
+    <string name="raw_frame_hint">Utile pour comparer le décodage avec la spécification FTMS.</string>
+    <string name="debug_requires_connection">Connectez un tapis depuis l\'onglet Entraînements pour voir les mesures.</string>
+
+    <string name="settings_title">Paramètres</string>
+    <string name="settings_language_title">Langue</string>
+    <string name="settings_language_summary">Par défaut, Make It Run suit la langue du téléphone et bascule en anglais lorsque celle-ci n\'est pas disponible.</string>
+    <string name="settings_language_system">Langue du téléphone</string>
+
+    <string name="about_title">À propos</string>
+    <string name="about_tagline">Vos séances fractionnées, pilotées directement sur le tapis.</string>
+    <string name="about_version">Version %1$s</string>
+    <string name="about_author_section">Auteur</string>
+    <string name="about_contact_section">Contact</string>
+    <string name="about_contact_action">Écrire un courriel</string>
+    <string name="about_source_section">Code source</string>
+    <string name="about_source_action">Ouvrir le dépôt</string>
+    <string name="about_license">Distribué sous licence MIT.</string>
+</resources>

@@ -25,8 +25,6 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.kotlinx.coroutines.android)
 
-    // En "implementation" et non "api" : les types Nordic ne doivent pas fuiter hors du module,
-    // pour que l'application ne dependre que de l'API FTMS exposee ici.
     implementation(libs.nordic.ble.client)
     implementation(libs.nordic.ble.scanner)
 

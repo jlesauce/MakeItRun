@@ -1,16 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Android 12 (API 31) et plus : permissions Bluetooth dediees.
-         neverForLocation indique au systeme qu'on ne derive pas la position
-         depuis les resultats de scan, ce qui evite d'exiger la localisation. -->
     <uses-permission
         android:name="android.permission.BLUETOOTH_SCAN"
         android:usesPermissionFlags="neverForLocation" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 
-    <!-- Android 11 (API 30) et moins : ancien modele de permissions.
-         Le scan BLE y est considere comme une capacite de geolocalisation. -->
     <uses-permission
         android:name="android.permission.BLUETOOTH"
         android:maxSdkVersion="30" />

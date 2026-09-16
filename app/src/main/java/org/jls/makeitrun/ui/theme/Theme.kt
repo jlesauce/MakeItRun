@@ -25,7 +25,6 @@ private val DarkColors = darkColorScheme(
 @Composable
 fun MakeItRunTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    /** Couleurs derivees du fond d'ecran, disponibles a partir d'Android 12. */
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit,
 ) {

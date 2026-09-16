@@ -20,21 +20,14 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
 import no.nordicsemi.android.kotlin.ble.client.main.callback.ClientBleGatt
 import no.nordicsemi.android.kotlin.ble.client.main.service.ClientBleGattCharacteristic
+import no.nordicsemi.android.kotlin.ble.client.main.service.ClientBleGattService
 import no.nordicsemi.android.kotlin.ble.core.data.BleWriteType
 import no.nordicsemi.android.kotlin.ble.core.data.GattConnectionState
 import no.nordicsemi.android.kotlin.ble.core.data.util.DataByteArray
 import timber.log.Timber
+import java.util.UUID
 import kotlin.math.roundToInt
 
-/**
- * Liaison avec un tapis de course parlant FTMS.
- *
- * Une seule machine est pilotee a la fois : l'instance est donc destinee a etre unique dans
- * l'application, et a survivre aux changements d'ecran pour que la seance ne soit pas coupee.
- *
- * Le pilotage suit toujours le meme ordre impose par la specification : connexion, puis
- * [requestControl], et seulement ensuite les commandes de vitesse ou de demarrage.
- */
 class FtmsTreadmillClient(
     private val context: Context,
     private val scope: CoroutineScope,
@@ -47,18 +40,19 @@ class FtmsTreadmillClient(
     private val _treadmillData = MutableStateFlow<TreadmillData?>(null)
     val treadmillData = _treadmillData.asStateFlow()
 
-    /** Derniere trame brute recue, en hexadecimal. Sert au diagnostic face a une vraie machine. */
     private val _lastRawFrame = MutableStateFlow<String?>(null)
     val lastRawFrame = _lastRawFrame.asStateFlow()
 
     private val _controlResponses = MutableSharedFlow<FtmsControlResponse>(extraBufferCapacity = 8)
     val controlResponses = _controlResponses.asSharedFlow()
 
+    private val _capabilities = MutableStateFlow<TreadmillCapabilities?>(null)
+    val capabilities = _capabilities.asStateFlow()
+
     private var gatt: ClientBleGatt? = null
     private var controlPoint: ClientBleGattCharacteristic? = null
     private val observerJobs = mutableListOf<Job>()
 
-    /** Serialise les connexions : deux appuis rapproches creeraient sinon deux clients GATT. */
     private val connectionMutex = Mutex()
 
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
@@ -86,6 +80,8 @@ class FtmsTreadmillClient(
 
             controlPoint = service.findCharacteristic(FtmsUuids.FITNESS_MACHINE_CONTROL_POINT)
                 ?.also { observeControlResponses(it) }
+
+            _capabilities.value = readCapabilities(service)
 
             Timber.i("Connecte a %s, pilotage %s", address, if (controlPoint != null) "disponible" else "indisponible")
             _connectionState.value = TreadmillConnectionState.Connected(
@@ -119,23 +115,23 @@ class FtmsTreadmillClient(
         _connectionState.value = TreadmillConnectionState.Disconnected
     }
 
-    /**
-     * Demande la main sur la machine. Tant que cette commande n'a pas abouti, le tapis rejette
-     * toute commande de pilotage avec [FtmsResultCode.CONTROL_NOT_PERMITTED].
-     */
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     suspend fun requestControl(): FtmsControlResponse? =
         writeCommand(DataByteArray.opCode(FtmsOpCode.REQUEST_CONTROL.value))
 
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     suspend fun start(): FtmsControlResponse? =
         writeCommand(DataByteArray.opCode(FtmsOpCode.START_OR_RESUME.value))
 
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     suspend fun stop(): FtmsControlResponse? =
         writeCommand(DataByteArray.opCode(FtmsOpCode.STOP_OR_PAUSE.value, STOP_PARAMETER))
 
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     suspend fun pause(): FtmsControlResponse? =
         writeCommand(DataByteArray.opCode(FtmsOpCode.STOP_OR_PAUSE.value, PAUSE_PARAMETER))
 
-    /** @param speedKmh vitesse cible en km/h, arrondie au centieme transmis a la machine. */
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     suspend fun setTargetSpeed(speedKmh: Double): FtmsControlResponse? {
         val hundredths = (speedKmh * 100).roundToInt()
         return writeCommand(
@@ -149,7 +145,7 @@ class FtmsTreadmillClient(
         )
     }
 
-    /** @param inclinationPercent pente cible en pourcentage, negative en descente. */
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     suspend fun setTargetInclination(inclinationPercent: Double): FtmsControlResponse? {
         val tenths = (inclinationPercent * 10).roundToInt()
         return writeCommand(
@@ -163,16 +159,7 @@ class FtmsTreadmillClient(
         )
     }
 
-    /**
-     * Ecrit une commande puis attend l'indication de reponse correspondante.
-     *
-     * L'attente est mise en place **avant** l'ecriture, et demarree sans redispatch, faute de quoi
-     * une machine qui repond tres vite pourrait emettre sa reponse avant que le collecteur ne soit
-     * en place : le flux de reponses ne rejoue rien, la reponse serait alors perdue.
-     *
-     * @return la reponse de la machine, ou `null` si le Control Point est absent ou si la
-     * machine n'a pas repondu dans le delai imparti.
-     */
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     private suspend fun writeCommand(command: DataByteArray): FtmsControlResponse? {
         val characteristic = controlPoint ?: return null
         val sentOpCode = FtmsOpCode.fromValue(command.value[0])
@@ -189,6 +176,26 @@ class FtmsTreadmillClient(
 
             pendingResponse.await()
         }
+    }
+
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+    private suspend fun readCapabilities(
+        service: ClientBleGattService,
+    ): TreadmillCapabilities {
+        suspend fun read(uuid: UUID): ByteArray? =
+            service.findCharacteristic(uuid)?.let { characteristic ->
+                runCatching { characteristic.read().value }
+                    .onFailure { Timber.d(it, "Lecture impossible de %s", uuid) }
+                    .getOrNull()
+            }
+
+        val capabilities = TreadmillCapabilitiesParser.parse(
+            featurePayload = read(FtmsUuids.FITNESS_MACHINE_FEATURE),
+            speedRangePayload = read(FtmsUuids.SUPPORTED_SPEED_RANGE),
+            inclinationRangePayload = read(FtmsUuids.SUPPORTED_INCLINATION_RANGE),
+        )
+        Timber.i("Capacites du tapis : %s", capabilities)
+        return capabilities
     }
 
     private fun observeTreadmillData(characteristic: ClientBleGattCharacteristic) {
@@ -229,12 +236,6 @@ class FtmsTreadmillClient(
         }
     }
 
-    /**
-     * A la fermeture d'un flux de notifications, la bibliotheque Bluetooth tente de desactiver
-     * les notifications sur la machine. Si le GATT vient d'etre ferme, cette derniere operation
-     * echoue : c'est attendu lors d'une deconnexion, et cela ne doit pas remonter jusqu'au
-     * gestionnaire d'exceptions par defaut, qui arreterait l'application.
-     */
     private suspend fun collectUntilDisconnected(label: String, block: suspend () -> Unit) {
         try {
             block()

@@ -2,12 +2,6 @@ package org.jls.makeitrun.ftms
 
 import kotlin.math.roundToInt
 
-/**
- * Instantane des mesures publiees par un tapis via la caracteristique Treadmill Data (0x2ACD).
- *
- * Chaque champ est optionnel : la machine choisit, trame par trame, les mesures qu'elle transmet
- * via son champ de drapeaux. Un champ a `null` signifie donc "non transmis", et non "zero".
- */
 data class TreadmillData(
     val instantaneousSpeedKmh: Double? = null,
     val averageSpeedKmh: Double? = null,
@@ -29,10 +23,6 @@ data class TreadmillData(
     val powerOutputWatts: Int? = null,
 ) {
 
-    /**
-     * Allure instantanee en secondes par kilometre, l'unite habituelle en course a pied.
-     * Vaut `null` a l'arret, ou si la vitesse n'est pas transmise.
-     */
     val paceSecondsPerKm: Int?
         get() = instantaneousSpeedKmh
             ?.takeIf { it > 0.0 }

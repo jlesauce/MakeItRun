@@ -8,7 +8,6 @@ class TreadmillDataParserTest {
 
     @Test
     fun `speed is present when the more data flag is cleared`() {
-        // Drapeaux a zero : seule la vitesse instantanee suit, ici 3,00 km/h (300 centiemes).
         val data = parse(0x00, 0x00, 0x2C, 0x01)
 
         assertEquals(3.0, data.instantaneousSpeedKmh!!, DELTA)
@@ -25,12 +24,11 @@ class TreadmillDataParserTest {
 
     @Test
     fun `distance and elapsed time are decoded after the speed`() {
-        // Drapeaux : distance totale (bit 2) et temps ecoule (bit 10).
         val data = parse(
             0x04, 0x04,
-            0x5E, 0x01, // vitesse : 350 centiemes = 3,50 km/h
-            0xD2, 0x04, 0x00, // distance : 1234 m sur 24 bits
-            0x41, 0x00, // temps ecoule : 65 s
+            0x5E, 0x01,
+            0xD2, 0x04, 0x00,
+            0x41, 0x00,
         )
 
         assertEquals(3.5, data.instantaneousSpeedKmh!!, DELTA)
@@ -40,12 +38,11 @@ class TreadmillDataParserTest {
 
     @Test
     fun `negative inclination is decoded as a signed value`() {
-        // Drapeau inclinaison (bit 3) : pente puis angle de rampe, tous deux signes.
         val data = parse(
             0x08, 0x00,
             0x5E, 0x01,
-            0xE7, 0xFF, // pente : -25 dixiemes = -2,5 %
-            0x0A, 0x00, // angle de rampe : 10 dixiemes = 1,0 degre
+            0xE7, 0xFF,
+            0x0A, 0x00,
         )
 
         assertEquals(-2.5, data.inclinationPercent!!, DELTA)
@@ -54,7 +51,6 @@ class TreadmillDataParserTest {
 
     @Test
     fun `heart rate is decoded when announced`() {
-        // Drapeau frequence cardiaque (bit 8).
         val data = parse(0x00, 0x01, 0x5E, 0x01, 0x8A)
 
         assertEquals(138, data.heartRateBpm)
@@ -62,7 +58,6 @@ class TreadmillDataParserTest {
 
     @Test
     fun `a frame shorter than announced leaves the missing fields empty`() {
-        // Les drapeaux annoncent la distance, mais la trame s'arrete apres la vitesse.
         val data = parse(0x04, 0x00, 0x5E, 0x01)
 
         assertEquals(3.5, data.instantaneousSpeedKmh!!, DELTA)
@@ -76,7 +71,6 @@ class TreadmillDataParserTest {
 
     @Test
     fun `pace is derived from the instantaneous speed`() {
-        // 12 km/h correspond a 5 min par kilometre, soit 300 secondes.
         val data = parse(0x00, 0x00, 0xB0, 0x04)
 
         assertEquals(300, data.paceSecondsPerKm)

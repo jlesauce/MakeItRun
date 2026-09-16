@@ -1,52 +1,167 @@
 <resources>
-    <string name="app_name">Make It Run</string>
+    <string name="app_name" translatable="false">Make It Run</string>
 
-    <!-- Permissions -->
-    <string name="permission_title">Autorisation Bluetooth requise</string>
-    <string name="permission_rationale">Make It Run a besoin du Bluetooth pour détecter votre tapis de course et lui transmettre vos entraînements.</string>
-    <string name="permission_grant">Autoriser</string>
+    <string name="tab_workouts">Workouts</string>
+    <string name="tab_debug">Debug</string>
 
-    <!-- Recherche d\'appareils -->
-    <string name="scan_start">Rechercher un tapis</string>
-    <string name="scan_stop">Arrêter la recherche</string>
-    <string name="scan_show_all">Afficher tous les appareils Bluetooth</string>
-    <string name="scan_show_all_hint">À n\'utiliser que si votre tapis n\'apparaît pas : certains appareils n\'annoncent pas le service FTMS avant la connexion.</string>
-    <string name="scan_searching">Recherche en cours…</string>
-    <string name="scan_empty">Aucun appareil détecté. Vérifiez que le tapis est allumé et à portée.</string>
-    <string name="device_unknown_name">Appareil sans nom</string>
+    <string name="menu_more">More options</string>
+    <string name="menu_settings">Settings</string>
+    <string name="menu_about">About</string>
+    <string name="action_back">Back</string>
+
+    <string name="permission_title">Bluetooth permission required</string>
+    <string name="permission_rationale">Make It Run needs Bluetooth to find your treadmill and send it your workouts.</string>
+    <string name="permission_grant">Allow</string>
+
+    <string name="connection_connected">%1$s</string>
+    <string name="connection_disconnected">Treadmill not connected</string>
+    <string name="connection_connecting">Connecting…</string>
+    <string name="connection_discovering">Reading capabilities…</string>
+    <string name="connection_failed">Failed: %1$s</string>
+    <string name="connection_search">Search</string>
+    <string name="connection_reconnect">Reconnect</string>
+    <string name="connection_disconnect">Disconnect</string>
+    <string name="connection_cancel">Cancel</string>
+    <string name="connection_searching">Searching…</string>
+    <string name="connection_no_device">No treadmill found. Check that it is switched on and that no other app is connected to it.</string>
+    <string name="connection_show_all">Show all Bluetooth devices</string>
+    <string name="connection_led_description">Connection indicator</string>
+    <string name="device_unknown_name">Unnamed device</string>
     <string name="device_rssi">%1$d dBm</string>
     <string name="device_supports_ftms">FTMS</string>
 
-    <!-- États de connexion -->
-    <string name="status_disconnected">Déconnecté</string>
-    <string name="status_connecting">Connexion…</string>
-    <string name="status_discovering">Découverte des services…</string>
-    <string name="status_connected">Connecté à %1$s</string>
-    <string name="status_failed">Échec : %1$s</string>
-    <string name="status_read_only">Ce tapis ne peut pas être piloté à distance.</string>
-    <string name="disconnect">Se déconnecter</string>
+    <string name="workouts_section">My workouts:</string>
+    <string name="workouts_empty">No workouts yet. Tap “+” to create one.</string>
+    <string name="workouts_locked">Connect your treadmill once so that you can create a workout: Make It Run needs to know its speeds and settings.</string>
+    <string name="workouts_create">Create a workout</string>
+    <string name="workout_summary_line">%1$s · %2$s</string>
+    <plurals name="workout_step_count">
+        <item quantity="one">%1$d step</item>
+        <item quantity="other">%1$d steps</item>
+    </plurals>
 
-    <!-- Mesures -->
-    <string name="metrics_title">Mesures en direct</string>
-    <string name="metric_speed">Vitesse</string>
-    <string name="metric_pace">Allure</string>
+    <string name="workout_detail_title">Summary</string>
+    <string name="workout_detail_start">Start on treadmill</string>
+    <string name="workout_detail_edit">Edit</string>
+    <string name="workout_detail_delete">Delete</string>
+    <string name="workout_detail_needs_connection">Connect the treadmill to start this workout.</string>
+    <string name="workout_detail_estimate_partial">Partial estimate: some steps have no target pace.</string>
+
+    <string name="editor_title_new">New workout</string>
+    <string name="editor_title_edit">Edit workout</string>
+    <string name="editor_name">Workout name</string>
+    <string name="editor_add_step">Add a step</string>
+    <string name="editor_add_repeat">Add a repeat block</string>
+    <string name="editor_save">Save</string>
+    <string name="editor_empty">Add a first step to get started.</string>
+    <string name="editor_repetitions">Repetitions</string>
+    <string name="editor_add_step_to_block">Add a step to the block</string>
+    <string name="editor_move_up">Move up</string>
+    <string name="editor_move_down">Move down</string>
+    <string name="editor_delete">Delete</string>
+    <string name="editor_step_type">Step type</string>
+    <string name="editor_duration_mode">End of step</string>
+    <string name="editor_duration_time">Duration</string>
+    <string name="editor_duration_distance">Distance</string>
+    <string name="editor_minutes">Minutes</string>
+    <string name="editor_seconds">Seconds</string>
+    <string name="editor_metres">Metres</string>
+    <string name="editor_target_title_pace">Target pace</string>
+    <string name="editor_target_title_speed">Target speed</string>
+    <string name="editor_target_hint">The pace Make It Run will impose on the treadmill during this step. “Free” leaves the treadmill at its current speed, without sending it any command.</string>
+    <string name="editor_target_fixed">Imposed</string>
+    <string name="editor_target_free">Free</string>
+    <string name="editor_unit_pace">Pace (min/km)</string>
+    <string name="editor_unit_speed">Speed (km/h)</string>
+    <string name="editor_inclination">Incline (%%)</string>
+    <string name="editor_speed_bounds">Your treadmill accepts %1$s to %2$s km/h.</string>
+    <string name="editor_target_manual_pace">Enter the pace</string>
+    <string name="editor_target_manual_speed">Enter the speed</string>
+    <string name="editor_target_manual_hint">Tap the value to type it in.</string>
+    <string name="editor_speed_field">km/h</string>
+    <string name="editor_done">Confirm</string>
+    <string name="editor_cancel">Cancel</string>
+
+    <string name="step_type_warm_up">Warm-up</string>
+    <string name="step_type_run">Effort</string>
+    <string name="step_type_recover">Recovery</string>
+    <string name="step_type_cool_down">Cool-down</string>
+
+    <string name="session_title">Session</string>
+    <string name="session_countdown">Get ready</string>
+    <string name="session_step_progress">Step %1$d of %2$d</string>
+    <string name="session_repetition">Repetition %1$d of %2$d</string>
+    <string name="session_next_step">Next: %1$s</string>
+    <string name="session_target">Target</string>
+    <string name="session_actual">Actual speed</string>
+    <string name="session_remaining_time">Time remaining</string>
+    <string name="session_remaining_distance">Distance remaining</string>
+    <string name="session_total">Total: %1$s · %2$s</string>
+    <string name="session_pause">Pause</string>
+    <string name="session_resume">Resume</string>
+    <string name="session_stop">Emergency stop</string>
+    <string name="session_finished">Session complete</string>
+    <string name="session_finished_summary">%1$s covered in %2$s</string>
+    <string name="session_close">Close</string>
+    <string name="session_free_pace">Free pace</string>
+
+    <string name="session_channel_name">Session in progress</string>
+    <string name="session_preparing">Preparing the session…</string>
+    <string name="session_countdown_notification">Starting in %1$d s</string>
+    <string name="session_running_notification">Step %1$d of %2$d</string>
+    <string name="session_paused_notification">Session paused</string>
+
+    <string name="metrics_title">Live metrics</string>
+    <string name="metric_speed">Speed</string>
+    <string name="metric_pace">Pace</string>
     <string name="metric_distance">Distance</string>
-    <string name="metric_time">Temps écoulé</string>
-    <string name="metric_inclination">Inclinaison</string>
-    <string name="metric_heart_rate">Fréquence cardiaque</string>
-    <string name="metric_energy">Dépense</string>
-    <string name="metric_waiting">En attente des premières mesures du tapis…</string>
+    <string name="metric_time">Elapsed time</string>
+    <string name="metric_inclination">Incline</string>
+    <string name="metric_heart_rate">Heart rate</string>
+    <string name="metric_energy">Energy</string>
+    <string name="metric_waiting">Waiting for the treadmill\'s first readings…</string>
     <string name="value_unavailable">—</string>
 
-    <!-- Pilotage -->
-    <string name="control_title">Pilotage</string>
-    <string name="control_request">Prendre le contrôle</string>
-    <string name="control_start">Démarrer</string>
-    <string name="control_stop">Arrêter</string>
-    <string name="control_target_speed">Vitesse cible : %1$s km/h</string>
-    <string name="control_apply_speed">Appliquer la vitesse</string>
+    <string name="control_title">Manual control</string>
+    <string name="control_request">Take control</string>
+    <string name="control_request_hint">The FTMS protocol requires claiming control of the machine before any command. Until that is done, the treadmill refuses to start and ignores speed and incline. Do it again if the treadmill has been used from its own panel.</string>
+    <string name="control_start">Start</string>
+    <string name="control_stop">Stop</string>
+    <string name="control_target_speed">Target speed: %1$s km/h</string>
+    <string name="control_apply_speed">Apply speed</string>
+    <string name="control_target_inclination">Target incline: %1$s %%</string>
+    <string name="control_apply_inclination">Apply incline</string>
+    <string name="control_inclination_undeclared">This treadmill does not declare that it can set its incline remotely. The slider stays active so you can try anyway: the machine will answer that it refuses if it cannot do it.</string>
 
-    <!-- Diagnostic -->
-    <string name="raw_frame_title">Dernière trame reçue</string>
-    <string name="raw_frame_hint">Utile pour comparer le décodage avec la spécification FTMS.</string>
+    <string name="capabilities_title">Declared capabilities</string>
+    <string name="capabilities_speed">Speed: %1$s to %2$s km/h (steps of %3$s)</string>
+    <string name="capabilities_inclination">Incline: %1$s to %2$s %%</string>
+    <string name="capabilities_no_inclination">Incline cannot be set remotely</string>
+    <string name="capabilities_unknown">No treadmill connected yet.</string>
+
+    <string name="raw_frame_title">Last frame received</string>
+    <string name="raw_frame_hint">Useful for comparing the decoding with the FTMS specification.</string>
+    <string name="debug_requires_connection">Connect a treadmill from the Workouts tab to see the metrics.</string>
+
+    <string name="settings_title">Settings</string>
+    <string name="settings_language_title">Language</string>
+    <string name="settings_language_summary">By default Make It Run follows your phone\'s language and falls back to English when that language is not available.</string>
+    <string name="settings_language_system">Phone language</string>
+    <string name="settings_language_english" translatable="false">English</string>
+    <string name="settings_language_french" translatable="false">Français</string>
+
+    <string name="about_title">About</string>
+    <string name="about_tagline">Your interval workouts, driven straight on the treadmill.</string>
+    <string name="about_version">Version %1$s</string>
+    <string name="about_author_section">Author</string>
+    <string name="about_contact_section">Contact</string>
+    <string name="about_contact_action">Send an email</string>
+    <string name="about_source_section">Source code</string>
+    <string name="about_source_action">Open the repository</string>
+    <string name="about_license">Released under the MIT licence.</string>
+
+    <string name="about_author_name" translatable="false">Julien Le Sauce</string>
+    <string name="about_email" translatable="false">julien.lesauce@gmail.com</string>
+    <string name="about_repository_label" translatable="false">github.com/jlesauce/MakeItRun</string>
+    <string name="about_repository_url" translatable="false">https://github.com/jlesauce/MakeItRun</string>
 </resources>

@@ -14,21 +14,8 @@ import no.nordicsemi.android.kotlin.ble.core.scanner.FilteredServiceUuid
 import no.nordicsemi.android.kotlin.ble.scanner.BleScanner
 import no.nordicsemi.android.kotlin.ble.scanner.aggregator.BleScanResultAggregator
 
-/**
- * Recherche les tapis de course a portee.
- *
- * Le scan s'arrete automatiquement des que la collecte du [Flow] cesse : il suffit donc de
- * l'englober dans un scope qui vit le temps de l'ecran de recherche.
- */
 class FtmsScanner(private val context: Context) {
 
-    /**
-     * @param fitnessMachinesOnly si vrai, seuls les appareils annoncant le service FTMS sont
-     * remontes. Passer `false` permet de lister tous les appareils BLE alentour, ce qui aide
-     * a diagnostiquer un tapis qui n'annoncerait pas le service dans son advertising.
-     * @return un [Flow] qui reemet la liste complete des appareils connus a chaque detection,
-     * triee du signal le plus fort au plus faible.
-     */
     @RequiresPermission(
         allOf = [Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT]
     )
@@ -47,10 +34,7 @@ class FtmsScanner(private val context: Context) {
         }
 
         val settings = BleScannerSettings(
-            // L'ecran de recherche est au premier plan : on privilegie la reactivite.
             scanMode = BleScanMode.SCAN_MODE_LOW_LATENCY,
-            // Les appareils apparies sont remontes sans passer par les filtres de service,
-            // ce qui polluerait la liste filtree.
             includeStoredBondedDevices = false,
         )
 

@@ -21,27 +21,24 @@ object FtmsModule {
 
     @Provides
     @Singleton
+    @ApplicationScope
+    fun provideApplicationScope(): CoroutineScope = CoroutineScope(
+        SupervisorJob() +
+            Dispatchers.IO +
+            CoroutineExceptionHandler { _, error ->
+                Timber.e(error, "Erreur non geree dans la liaison FTMS")
+            }
+    )
+
+    @Provides
+    @Singleton
     fun provideFtmsScanner(@ApplicationContext context: Context): FtmsScanner =
         FtmsScanner(context)
 
-    /**
-     * Le client est unique et vit aussi longtemps que l'application : la liaison avec le tapis
-     * doit survivre a une rotation d'ecran ou a un passage en arriere-plan, sans quoi la seance
-     * serait interrompue. Son scope propre est donc independant de celui des ecrans.
-     */
     @Provides
     @Singleton
-    fun provideFtmsTreadmillClient(@ApplicationContext context: Context): FtmsTreadmillClient =
-        FtmsTreadmillClient(
-            context = context,
-            scope = CoroutineScope(
-                SupervisorJob() +
-                    Dispatchers.IO +
-                    // Filet de securite : une erreur Bluetooth imprevue doit apparaitre dans les
-                    // journaux, jamais arreter l'application au milieu d'une seance.
-                    CoroutineExceptionHandler { _, error ->
-                        Timber.e(error, "Erreur non geree dans la liaison FTMS")
-                    }
-            ),
-        )
+    fun provideFtmsTreadmillClient(
+        @ApplicationContext context: Context,
+        @ApplicationScope scope: CoroutineScope,
+    ): FtmsTreadmillClient = FtmsTreadmillClient(context = context, scope = scope)
 }

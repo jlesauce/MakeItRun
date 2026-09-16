@@ -1,14 +1,5 @@
 package org.jls.makeitrun.ftms
 
-/**
- * Decode les trames de la caracteristique Treadmill Data (0x2ACD).
- *
- * La trame commence par 16 bits de drapeaux, suivis des seuls champs annonces par ces drapeaux,
- * dans l'ordre fixe par la specification. Toutes les valeurs multi-octets sont en little-endian.
- *
- * Attention au premier drapeau : contrairement aux autres, "More Data" indique la presence de la
- * vitesse instantanee lorsqu'il vaut **zero**.
- */
 object TreadmillDataParser {
 
     private const val FLAG_MORE_DATA = 0
@@ -25,16 +16,10 @@ object TreadmillDataParser {
     private const val FLAG_REMAINING_TIME = 11
     private const val FLAG_FORCE_ON_BELT = 12
 
-    /**
-     * @return les mesures decodees, ou `null` si la trame est trop courte pour contenir
-     * ne serait-ce que les drapeaux.
-     */
     fun parse(payload: ByteArray): TreadmillData? {
         val cursor = ByteCursor(payload)
         val flags = cursor.uint16() ?: return null
 
-        // Une machine peut annoncer plus de champs qu'elle n'en envoie reellement. Le curseur
-        // renvoie alors null et les champs suivants restent simplement non renseignes.
         return TreadmillData(
             instantaneousSpeedKmh = if (!flags.isSet(FLAG_MORE_DATA)) cursor.uint16()?.hundredths() else null,
             averageSpeedKmh = if (flags.isSet(FLAG_AVERAGE_SPEED)) cursor.uint16()?.hundredths() else null,
@@ -64,10 +49,6 @@ object TreadmillDataParser {
     private fun Int.tenths(): Double = this / 10.0
 }
 
-/**
- * Lecteur sequentiel little-endian. Renvoie `null` des qu'il ne reste plus assez d'octets,
- * ce qui evite de faire planter l'application sur une trame inattendue.
- */
 private class ByteCursor(private val bytes: ByteArray) {
 
     private var offset = 0

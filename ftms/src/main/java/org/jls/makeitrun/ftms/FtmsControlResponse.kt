@@ -1,10 +1,5 @@
 package org.jls.makeitrun.ftms
 
-/**
- * Reponse indiquee par la machine apres l'ecriture d'une commande sur le Control Point.
- *
- * La trame fait trois octets : 0x80, le code de la commande concernee, puis le resultat.
- */
 data class FtmsControlResponse(
     val requestOpCode: FtmsOpCode?,
     val result: FtmsResultCode?,

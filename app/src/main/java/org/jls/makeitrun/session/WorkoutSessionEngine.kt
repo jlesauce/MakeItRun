@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 import org.jls.makeitrun.di.ApplicationScope
 import org.jls.makeitrun.ftms.FtmsTreadmillClient
 import org.jls.makeitrun.ftms.TreadmillCapabilities
+import org.jls.makeitrun.heartrate.HeartRateClient
 import org.jls.makeitrun.workout.model.ResolvedStep
 import org.jls.makeitrun.workout.model.Workout
 import org.jls.makeitrun.workout.model.WorkoutPlan
@@ -19,11 +20,13 @@ import org.jls.makeitrun.workout.model.WorkoutStep
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.math.abs
 
 @SuppressLint("MissingPermission")
 @Singleton
 class WorkoutSessionEngine @Inject constructor(
     private val client: FtmsTreadmillClient,
+    private val heartRateClient: HeartRateClient,
     @param:ApplicationScope private val scope: CoroutineScope,
 ) {
 
@@ -31,16 +34,25 @@ class WorkoutSessionEngine @Inject constructor(
     val state = _state.asStateFlow()
 
     private var sessionJob: Job? = null
+    private var speedGuardJob: Job? = null
     private val pauseRequested = MutableStateFlow(false)
 
-    fun start(workout: Workout, capabilities: TreadmillCapabilities?) {
+    private var lastCommandedSpeedKmh: Double? = null
+
+    fun start(
+        workout: Workout,
+        capabilities: TreadmillCapabilities?,
+        responsiveness: RegulationResponsiveness = RegulationResponsiveness.DEFAULT,
+    ) {
         if (_state.value.isActive) {
             Timber.w("Une seance est deja en cours, demarrage ignore")
             return
         }
         sessionJob?.cancel()
+        speedGuardJob?.cancel()
         pauseRequested.value = false
-        sessionJob = scope.launch { runSession(workout, capabilities) }
+        lastCommandedSpeedKmh = null
+        sessionJob = scope.launch { runSession(workout, capabilities, responsiveness) }
     }
 
     fun pause() {
@@ -54,6 +66,8 @@ class WorkoutSessionEngine @Inject constructor(
     fun stop() {
         sessionJob?.cancel()
         sessionJob = null
+        speedGuardJob?.cancel()
+        speedGuardJob = null
         pauseRequested.value = false
         scope.launch { runCatching { client.stop() } }
         _state.value = SessionState.Idle
@@ -63,7 +77,11 @@ class WorkoutSessionEngine @Inject constructor(
         if (!_state.value.isActive) _state.value = SessionState.Idle
     }
 
-    private suspend fun runSession(workout: Workout, capabilities: TreadmillCapabilities?) {
+    private suspend fun runSession(
+        workout: Workout,
+        capabilities: TreadmillCapabilities?,
+        responsiveness: RegulationResponsiveness,
+    ) {
         val steps = WorkoutPlan.flatten(workout.elements)
         if (steps.isEmpty()) {
             _state.value = SessionState.Failed("Cet entrainement ne contient aucune etape.")
@@ -83,7 +101,6 @@ class WorkoutSessionEngine @Inject constructor(
             }
             client.start()
 
-            val sessionStartedAt = SystemClock.elapsedRealtime()
             val sessionDistanceOrigin = currentTreadmillDistance()
             var completedStepsSeconds = 0
 
@@ -94,8 +111,9 @@ class WorkoutSessionEngine @Inject constructor(
                     steps = steps,
                     index = index,
                     completedStepsSeconds = completedStepsSeconds,
-                    sessionStartedAt = sessionStartedAt,
                     sessionDistanceOrigin = sessionDistanceOrigin,
+                    capabilities = capabilities,
+                    responsiveness = responsiveness,
                 )
             }
 
@@ -126,14 +144,18 @@ class WorkoutSessionEngine @Inject constructor(
         steps: List<ResolvedStep>,
         index: Int,
         completedStepsSeconds: Int,
-        sessionStartedAt: Long,
         sessionDistanceOrigin: Int,
+        capabilities: TreadmillCapabilities?,
+        responsiveness: RegulationResponsiveness,
     ): Int {
         val resolved = steps[index]
         val stepDistanceOrigin = currentTreadmillDistance()
         val stepStartedAt = SystemClock.elapsedRealtime()
         var pausedMillis = 0L
         var pauseStartedAt: Long? = null
+
+        val regulator = startRegulation(resolved.step, capabilities, responsiveness)
+        var regulation: RegulationOutcome? = null
 
         while (true) {
             delay(TICK_MILLIS)
@@ -154,6 +176,11 @@ class WorkoutSessionEngine @Inject constructor(
             val elapsedSeconds = ((now - stepStartedAt - pausedSoFar) / 1_000).toInt()
             val coveredMeters = (currentTreadmillDistance() - stepDistanceOrigin).coerceAtLeast(0)
 
+            if (regulator != null && !pauseRequested.value) {
+                regulation = regulator.update(now, heartRateClient.sample.value)
+                    .also { applyRegulation(it) }
+            }
+
             val progress = SessionProgress(
                 workoutName = workout.name,
                 currentStep = resolved,
@@ -168,6 +195,7 @@ class WorkoutSessionEngine @Inject constructor(
                 totalDistanceMeters =
                     (currentTreadmillDistance() - sessionDistanceOrigin).coerceAtLeast(0),
                 liveData = client.treadmillData.value,
+                regulation = regulation,
             )
 
             _state.value = if (pauseRequested.value) {
@@ -184,17 +212,84 @@ class WorkoutSessionEngine @Inject constructor(
         }
     }
 
-    private suspend fun applyStep(step: WorkoutStep, capabilities: TreadmillCapabilities?) {
-        step.targetSpeedKmh?.let { requested ->
-            val speed = capabilities?.speedRange?.coerce(requested) ?: requested
-            Timber.i("Etape %s : consigne %.1f km/h", step.type, speed)
-            client.setTargetSpeed(speed)
-        }
+    private suspend fun startRegulation(
+        step: WorkoutStep,
+        capabilities: TreadmillCapabilities?,
+        responsiveness: RegulationResponsiveness,
+    ): HeartRateRegulator? {
+        val target = step.heartRateTarget ?: return null
+        val speedRange = capabilities?.speedRange ?: TreadmillCapabilities.UNKNOWN.speedRange!!
 
+        val measured = client.treadmillData.value?.instantaneousSpeedKmh
+        val initialSpeed = measured?.takeIf { it >= speedRange.minimum }
+            ?: lastCommandedSpeedKmh
+            ?: DEFAULT_REGULATION_START_KMH
+
+        val regulator = HeartRateRegulator(
+            target = target,
+            speedRange = speedRange,
+            responsiveness = responsiveness,
+            initialSpeedKmh = initialSpeed,
+        )
+        Timber.i(
+            "Etape %s : zone %d-%d bpm, depart a %.1f km/h",
+            step.type,
+            target.minBpm,
+            target.maxBpm,
+            speedRange.coerce(initialSpeed),
+        )
+        setSpeed(speedRange.coerce(initialSpeed))
+        return regulator
+    }
+
+    private suspend fun applyRegulation(outcome: RegulationOutcome) {
+        if (!outcome.speedChanged) return
+        Timber.i(
+            "Regulation : %d bpm lisses, nouvelle consigne %.1f km/h",
+            outcome.smoothedBpm ?: 0,
+            outcome.targetSpeedKmh,
+        )
+        setSpeed(outcome.targetSpeedKmh)
+    }
+
+    private suspend fun setSpeed(speedKmh: Double) {
+        lastCommandedSpeedKmh = speedKmh
+        val speedBeforeCommand = client.treadmillData.value?.instantaneousSpeedKmh
+        client.setTargetSpeed(speedKmh)
+        speedGuardJob?.cancel()
+        speedGuardJob = scope.launch { resendWhileIgnored(speedKmh, speedBeforeCommand) }
+    }
+
+    private suspend fun resendWhileIgnored(target: Double, speedBeforeCommand: Double?) {
+        if (speedBeforeCommand == null) return
+        if (abs(target - speedBeforeCommand) <= SPEED_TOLERANCE_KMH) return
+
+        repeat(SPEED_RESEND_ATTEMPTS) {
+            delay(SPEED_RESEND_DELAY_MILLIS)
+            val measured = client.treadmillData.value?.instantaneousSpeedKmh ?: return
+            if (abs(measured - speedBeforeCommand) > SPEED_TOLERANCE_KMH) return
+            Timber.w(
+                "Le tapis est reste a %.1f km/h, consigne %.1f km/h renvoyee",
+                measured,
+                target,
+            )
+            client.setTargetSpeed(target)
+        }
+    }
+
+    private suspend fun applyStep(step: WorkoutStep, capabilities: TreadmillCapabilities?) {
         step.inclinationPercent?.let { requested ->
             if (capabilities?.canSetTargetInclination == false) return@let
             val inclination = capabilities?.inclinationRange?.coerce(requested) ?: requested
+            Timber.i("Etape %s : pente %.1f %%", step.type, inclination)
             client.setTargetInclination(inclination)
+            delay(COMMAND_SETTLE_MILLIS)
+        }
+
+        step.targetSpeedKmh?.let { requested ->
+            val speed = capabilities?.speedRange?.coerce(requested) ?: requested
+            Timber.i("Etape %s : consigne %.1f km/h", step.type, speed)
+            setSpeed(speed)
         }
     }
 
@@ -205,5 +300,12 @@ class WorkoutSessionEngine @Inject constructor(
         const val COUNTDOWN_SECONDS = 5
 
         const val TICK_MILLIS = 250L
+
+        const val DEFAULT_REGULATION_START_KMH = 8.0
+
+        const val COMMAND_SETTLE_MILLIS = 500L
+        const val SPEED_RESEND_DELAY_MILLIS = 4_000L
+        const val SPEED_RESEND_ATTEMPTS = 2
+        const val SPEED_TOLERANCE_KMH = 0.05
     }
 }

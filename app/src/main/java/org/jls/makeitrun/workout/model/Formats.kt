@@ -19,6 +19,8 @@ object Formats {
 
     fun speed(speedKmh: Double): String = "%.1f km/h".format(speedKmh)
 
+    fun inclination(percent: Double): String = "%.1f %%".format(percent)
+
     fun target(speedKmh: Double?, showPace: Boolean, freeLabel: String): String = when {
         speedKmh == null -> freeLabel
         showPace -> "${Pace.formatFromSpeed(speedKmh)} /km"

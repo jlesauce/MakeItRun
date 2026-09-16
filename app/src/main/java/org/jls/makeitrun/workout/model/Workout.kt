@@ -24,6 +24,29 @@ sealed interface StepDuration {
 }
 
 @Serializable
+data class HeartRateTarget(
+    val minBpm: Int,
+    val maxBpm: Int,
+) {
+
+    val centerBpm: Int
+        get() = (minBpm + maxBpm) / 2
+
+    operator fun contains(beatsPerMinute: Int): Boolean = beatsPerMinute in minBpm..maxBpm
+
+    companion object {
+        const val LOWEST_BPM = 60
+        const val HIGHEST_BPM = 220
+        const val NARROWEST_WIDTH_BPM = 5
+
+        fun isValid(minBpm: Int, maxBpm: Int): Boolean =
+            minBpm >= LOWEST_BPM &&
+                maxBpm <= HIGHEST_BPM &&
+                maxBpm - minBpm >= NARROWEST_WIDTH_BPM
+    }
+}
+
+@Serializable
 sealed interface WorkoutElement {
     val id: String
 }
@@ -36,7 +59,12 @@ data class WorkoutStep(
     val duration: StepDuration,
     val targetSpeedKmh: Double? = null,
     val inclinationPercent: Double? = null,
-) : WorkoutElement
+    val heartRateTarget: HeartRateTarget? = null,
+) : WorkoutElement {
+
+    val isHeartRateDriven: Boolean
+        get() = heartRateTarget != null
+}
 
 @Serializable
 @SerialName("repeat")

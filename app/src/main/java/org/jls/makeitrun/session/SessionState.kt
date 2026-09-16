@@ -16,6 +16,7 @@ data class SessionProgress(
     val totalElapsedSeconds: Int,
     val totalDistanceMeters: Int,
     val liveData: TreadmillData?,
+    val regulation: RegulationOutcome? = null,
 )
 
 sealed interface SessionState {

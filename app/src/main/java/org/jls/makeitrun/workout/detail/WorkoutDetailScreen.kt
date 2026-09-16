@@ -94,10 +94,7 @@ fun WorkoutDetailScreen(
             contentPadding = PaddingValues(top = 16.dp, bottom = 32.dp),
         ) {
             item {
-                StartBar(
-                    isConnected = state.isConnected,
-                    onStart = { onStart(workoutId) },
-                )
+                StartBar(state = state, onStart = { onStart(workoutId) })
             }
 
             state.summary?.let { summary ->
@@ -108,11 +105,15 @@ fun WorkoutDetailScreen(
                             verticalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
                             Text(
-                                text = stringResource(
-                                    R.string.workout_summary_line,
-                                    Formats.duration(summary.durationSeconds),
-                                    Formats.distance(summary.distanceMeters),
-                                ),
+                                text = if (summary.hasDistance) {
+                                    stringResource(
+                                        R.string.workout_summary_line,
+                                        Formats.duration(summary.durationSeconds),
+                                        Formats.distance(summary.distanceMeters),
+                                    )
+                                } else {
+                                    Formats.duration(summary.durationSeconds)
+                                },
                                 style = MaterialTheme.typography.headlineSmall,
                             )
                             Text(
@@ -123,7 +124,7 @@ fun WorkoutDetailScreen(
                                 ),
                                 style = MaterialTheme.typography.bodyMedium,
                             )
-                            if (!summary.isComplete) {
+                            if (summary.hasDistance && !summary.isComplete) {
                                 Text(
                                     text = stringResource(
                                         R.string.workout_detail_estimate_partial
@@ -207,21 +208,29 @@ private fun StepRow(index: Int, resolved: ResolvedStep, showPace: Boolean) {
 }
 
 @Composable
-private fun StartBar(isConnected: Boolean, onStart: () -> Unit) {
+private fun StartBar(state: WorkoutDetailUiState, onStart: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Button(
             onClick = onStart,
-            enabled = isConnected,
+            enabled = state.canStart,
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text(stringResource(R.string.workout_detail_start))
         }
-        if (!isConnected) {
+
+        val blockingReason = when {
+            !state.isConnected -> R.string.workout_detail_needs_connection
+            state.needsHeartRateSensor && !state.isHeartRateSensorConnected ->
+                R.string.workout_detail_needs_heart_rate
+
+            else -> null
+        }
+        blockingReason?.let {
             Text(
-                text = stringResource(R.string.workout_detail_needs_connection),
+                text = stringResource(it),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.error,
             )

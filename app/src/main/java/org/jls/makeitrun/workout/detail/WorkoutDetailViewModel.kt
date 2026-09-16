@@ -11,6 +11,8 @@ import org.jls.makeitrun.data.TreadmillProfileRepository
 import org.jls.makeitrun.data.WorkoutRepository
 import org.jls.makeitrun.ftms.FtmsTreadmillClient
 import org.jls.makeitrun.ftms.TreadmillConnectionState
+import org.jls.makeitrun.heartrate.HeartRateClient
+import org.jls.makeitrun.heartrate.HeartRateConnectionState
 import org.jls.makeitrun.workout.model.ResolvedStep
 import org.jls.makeitrun.workout.model.Workout
 import org.jls.makeitrun.workout.model.WorkoutPlan
@@ -22,14 +24,21 @@ data class WorkoutDetailUiState(
     val steps: List<ResolvedStep> = emptyList(),
     val summary: WorkoutSummary? = null,
     val isConnected: Boolean = false,
+    val isHeartRateSensorConnected: Boolean = false,
     val showPaceInsteadOfSpeed: Boolean = true,
-)
+) {
+    val needsHeartRateSensor: Boolean get() = steps.any { it.step.isHeartRateDriven }
+
+    val canStart: Boolean
+        get() = isConnected && (!needsHeartRateSensor || isHeartRateSensorConnected)
+}
 
 @HiltViewModel
 class WorkoutDetailViewModel @Inject constructor(
     private val repository: WorkoutRepository,
     profileRepository: TreadmillProfileRepository,
     client: FtmsTreadmillClient,
+    heartRateClient: HeartRateClient,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(WorkoutDetailUiState())
@@ -40,6 +49,16 @@ class WorkoutDetailViewModel @Inject constructor(
             client.connectionState.collect { state ->
                 _uiState.update {
                     it.copy(isConnected = state is TreadmillConnectionState.Connected)
+                }
+            }
+        }
+        viewModelScope.launch {
+            heartRateClient.connectionState.collect { state ->
+                _uiState.update {
+                    it.copy(
+                        isHeartRateSensorConnected =
+                            state is HeartRateConnectionState.Connected,
+                    )
                 }
             }
         }

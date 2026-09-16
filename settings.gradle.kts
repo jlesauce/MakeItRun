@@ -25,3 +25,4 @@ dependencyResolutionManagement {
 rootProject.name = "MakeItRun"
 include(":app")
 include(":ftms")
+include(":heartrate")

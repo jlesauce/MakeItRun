@@ -10,6 +10,7 @@ import kotlinx.coroutines.launch
 import org.jls.makeitrun.data.TreadmillProfileRepository
 import org.jls.makeitrun.data.WorkoutRepository
 import org.jls.makeitrun.ftms.TreadmillCapabilities
+import org.jls.makeitrun.workout.model.HeartRateTarget
 import org.jls.makeitrun.workout.model.RepeatBlock
 import org.jls.makeitrun.workout.model.StepDuration
 import org.jls.makeitrun.workout.model.StepType
@@ -18,6 +19,12 @@ import org.jls.makeitrun.workout.model.WorkoutElement
 import org.jls.makeitrun.workout.model.WorkoutStep
 import java.util.UUID
 import javax.inject.Inject
+
+enum class StepTargetMode {
+    FREE,
+    SPEED,
+    HEART_RATE,
+}
 
 data class StepDraft(
     val id: String,
@@ -28,8 +35,10 @@ data class StepDraft(
     val minutes: String,
     val seconds: String,
     val meters: String,
-    val hasTarget: Boolean,
+    val targetMode: StepTargetMode,
     val targetSpeedKmh: Double,
+    val heartRateMinBpm: Int,
+    val heartRateMaxBpm: Int,
     val inclinationPercent: Double?,
 ) {
 
@@ -42,8 +51,13 @@ data class StepDraft(
             val total = (minutes.toIntOrNull() ?: 0) * 60 + (seconds.toIntOrNull() ?: 0)
             StepDuration.Time(total.coerceAtLeast(1))
         },
-        targetSpeedKmh = targetSpeedKmh.takeIf { hasTarget },
+        targetSpeedKmh = targetSpeedKmh.takeIf { targetMode == StepTargetMode.SPEED },
         inclinationPercent = inclinationPercent,
+        heartRateTarget = if (targetMode == StepTargetMode.HEART_RATE) {
+            HeartRateTarget(minBpm = heartRateMinBpm, maxBpm = heartRateMaxBpm)
+        } else {
+            null
+        },
     )
 
     companion object {
@@ -61,8 +75,14 @@ data class StepDraft(
                 minutes = ((time?.seconds ?: 0) / 60).toString(),
                 seconds = ((time?.seconds ?: 0) % 60).toString(),
                 meters = (distance?.meters ?: DEFAULT_METERS).toString(),
-                hasTarget = step.targetSpeedKmh != null,
+                targetMode = when {
+                    step.heartRateTarget != null -> StepTargetMode.HEART_RATE
+                    step.targetSpeedKmh != null -> StepTargetMode.SPEED
+                    else -> StepTargetMode.FREE
+                },
                 targetSpeedKmh = step.targetSpeedKmh ?: DEFAULT_SPEED_KMH,
+                heartRateMinBpm = step.heartRateTarget?.minBpm ?: DEFAULT_MIN_BPM,
+                heartRateMaxBpm = step.heartRateTarget?.maxBpm ?: DEFAULT_MAX_BPM,
                 inclinationPercent = step.inclinationPercent,
             )
         }
@@ -76,12 +96,16 @@ data class StepDraft(
             minutes = "5",
             seconds = "0",
             meters = DEFAULT_METERS.toString(),
-            hasTarget = true,
+            targetMode = StepTargetMode.SPEED,
             targetSpeedKmh = DEFAULT_SPEED_KMH,
+            heartRateMinBpm = DEFAULT_MIN_BPM,
+            heartRateMaxBpm = DEFAULT_MAX_BPM,
             inclinationPercent = null,
         )
 
         private const val DEFAULT_SPEED_KMH = 9.0
+        private const val DEFAULT_MIN_BPM = 140
+        private const val DEFAULT_MAX_BPM = 155
     }
 }
 

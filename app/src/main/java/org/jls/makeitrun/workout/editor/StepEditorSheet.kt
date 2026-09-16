@@ -17,6 +17,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RangeSlider
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -35,6 +36,7 @@ import org.jls.makeitrun.R
 import org.jls.makeitrun.ftms.TreadmillCapabilities
 import org.jls.makeitrun.workout.WorkoutStepLabels
 import org.jls.makeitrun.workout.model.Formats
+import org.jls.makeitrun.workout.model.HeartRateTarget
 import org.jls.makeitrun.workout.model.Pace
 import org.jls.makeitrun.workout.model.StepType
 import kotlin.math.roundToInt
@@ -127,25 +129,40 @@ fun StepEditorSheet(
 
                 ChipRow {
                     FilterChip(
-                        selected = draft.hasTarget,
-                        onClick = { onDraftChange(draft.copy(hasTarget = true)) },
+                        selected = draft.targetMode == StepTargetMode.SPEED,
+                        onClick = { onDraftChange(draft.copy(targetMode = StepTargetMode.SPEED)) },
                         label = { Text(stringResource(R.string.editor_target_fixed)) },
                     )
                     FilterChip(
-                        selected = !draft.hasTarget,
-                        onClick = { onDraftChange(draft.copy(hasTarget = false)) },
+                        selected = draft.targetMode == StepTargetMode.HEART_RATE,
+                        onClick = {
+                            onDraftChange(draft.copy(targetMode = StepTargetMode.HEART_RATE))
+                        },
+                        label = { Text(stringResource(R.string.editor_target_heart_rate)) },
+                    )
+                    FilterChip(
+                        selected = draft.targetMode == StepTargetMode.FREE,
+                        onClick = { onDraftChange(draft.copy(targetMode = StepTargetMode.FREE)) },
                         label = { Text(stringResource(R.string.editor_target_free)) },
                     )
                 }
 
-                if (draft.hasTarget) {
-                    TargetPicker(
+                when (draft.targetMode) {
+                    StepTargetMode.SPEED -> TargetPicker(
                         draft = draft,
                         capabilities = capabilities,
                         showPace = showPace,
                         onDraftChange = onDraftChange,
                         onToggleUnit = onToggleUnit,
                     )
+
+                    StepTargetMode.HEART_RATE -> HeartRateZonePicker(
+                        draft = draft,
+                        capabilities = capabilities,
+                        onDraftChange = onDraftChange,
+                    )
+
+                    StepTargetMode.FREE -> Unit
                 }
             }
 
@@ -349,6 +366,54 @@ private fun TargetInputDialog(
                 Text(stringResource(R.string.editor_cancel))
             }
         },
+    )
+}
+
+@Composable
+private fun HeartRateZonePicker(
+    draft: StepDraft,
+    capabilities: TreadmillCapabilities,
+    onDraftChange: (StepDraft) -> Unit,
+) {
+    val speedRange = capabilities.speedRange ?: TreadmillCapabilities.UNKNOWN.speedRange!!
+
+    Text(
+        text = stringResource(
+            R.string.editor_heart_rate_zone,
+            draft.heartRateMinBpm,
+            draft.heartRateMaxBpm,
+        ),
+        style = MaterialTheme.typography.headlineSmall,
+    )
+
+    RangeSlider(
+        value = draft.heartRateMinBpm.toFloat()..draft.heartRateMaxBpm.toFloat(),
+        onValueChange = { range ->
+            val maximum = range.endInclusive.roundToInt().coerceIn(
+                HeartRateTarget.LOWEST_BPM + HeartRateTarget.NARROWEST_WIDTH_BPM,
+                HeartRateTarget.HIGHEST_BPM,
+            )
+            val minimum = range.start.roundToInt().coerceIn(
+                HeartRateTarget.LOWEST_BPM,
+                maximum - HeartRateTarget.NARROWEST_WIDTH_BPM,
+            )
+            onDraftChange(draft.copy(heartRateMinBpm = minimum, heartRateMaxBpm = maximum))
+        },
+        valueRange = HeartRateTarget.LOWEST_BPM.toFloat()..HeartRateTarget.HIGHEST_BPM.toFloat(),
+    )
+
+    Text(
+        text = stringResource(R.string.editor_heart_rate_hint),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.outline,
+    )
+    Text(
+        text = stringResource(
+            R.string.editor_heart_rate_bounds,
+            "%.1f".format(speedRange.minimum),
+            "%.1f".format(speedRange.maximum),
+        ),
+        style = MaterialTheme.typography.bodySmall,
     )
 }
 

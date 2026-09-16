@@ -31,11 +31,22 @@
     <string name="device_rssi">%1$d dBm</string>
     <string name="device_supports_ftms">FTMS</string>
 
+    <string name="heart_rate_connected">%1$s</string>
+    <string name="heart_rate_disconnected">Heart rate sensor not connected</string>
+    <string name="heart_rate_discovering">Reading the sensor…</string>
+    <string name="heart_rate_no_sensor">No heart rate sensor found. On a Garmin watch, turn on “Broadcast heart rate” in Settings, Sensors and accessories, Wrist heart rate.</string>
+    <string name="heart_rate_led_description">Heart rate sensor indicator</string>
+    <string name="heart_rate_waiting">Waiting for a measurement…</string>
+    <string name="heart_rate_no_frames">No data received, is the watch still broadcasting?</string>
+    <string name="heart_rate_bpm">%1$d bpm</string>
+    <string name="heart_rate_bpm_with_battery">%1$d bpm · battery %2$d%%</string>
+
     <string name="workouts_section">My workouts:</string>
     <string name="workouts_empty">No workouts yet. Tap “+” to create one.</string>
     <string name="workouts_locked">Connect your treadmill once so that you can create a workout: Make It Run needs to know its speeds and settings.</string>
     <string name="workouts_create">Create a workout</string>
     <string name="workout_summary_line">%1$s · %2$s</string>
+    <string name="step_target_with_inclination">%1$s · %2$s</string>
     <plurals name="workout_step_count">
         <item quantity="one">%1$d step</item>
         <item quantity="other">%1$d steps</item>
@@ -46,6 +57,7 @@
     <string name="workout_detail_edit">Edit</string>
     <string name="workout_detail_delete">Delete</string>
     <string name="workout_detail_needs_connection">Connect the treadmill to start this workout.</string>
+    <string name="workout_detail_needs_heart_rate">This workout has heart rate targets. Connect your sensor to start it.</string>
     <string name="workout_detail_estimate_partial">Partial estimate: some steps have no target pace.</string>
 
     <string name="editor_title_new">New workout</string>
@@ -71,7 +83,11 @@
     <string name="editor_target_title_speed">Target speed</string>
     <string name="editor_target_hint">The pace Make It Run will impose on the treadmill during this step. “Free” leaves the treadmill at its current speed, without sending it any command.</string>
     <string name="editor_target_fixed">Imposed</string>
+    <string name="editor_target_heart_rate">Heart rate</string>
     <string name="editor_target_free">Free</string>
+    <string name="editor_heart_rate_zone">%1$d – %2$d bpm</string>
+    <string name="editor_heart_rate_hint">Make It Run adjusts the speed by itself to hold you in this zone. It corrects slowly and in small steps, because the heart takes up to a minute to answer a change of pace. A heart rate sensor must be connected to start this workout.</string>
+    <string name="editor_heart_rate_bounds">It will stay between %1$s and %2$s km/h, the speeds your treadmill accepts.</string>
     <string name="editor_unit_pace">Pace (min/km)</string>
     <string name="editor_unit_speed">Speed (km/h)</string>
     <string name="editor_inclination">Incline (%%)</string>
@@ -105,6 +121,17 @@
     <string name="session_finished_summary">%1$s covered in %2$s</string>
     <string name="session_close">Close</string>
     <string name="session_free_pace">Free pace</string>
+    <string name="session_heart_rate_target">Target %1$d – %2$d bpm</string>
+    <string name="session_heart_rate_smoothed">Smoothed for regulation: %1$d bpm</string>
+    <string name="session_heart_rate_in_zone">In the zone</string>
+    <string name="session_heart_rate_below_zone">Below the zone</string>
+    <string name="session_heart_rate_above_zone">Above the zone</string>
+    <string name="session_heart_rate_unknown_zone">No measurement</string>
+    <string name="session_heart_rate_waiting">Waiting for the first heartbeats…</string>
+    <string name="session_heart_rate_signal_lost">Sensor silent: the speed is held until it answers again.</string>
+    <string name="session_heart_rate_not_worn">The sensor no longer detects contact: the speed is held.</string>
+    <string name="session_heart_rate_at_maximum">Your heart rate stays low and the treadmill is already at its top speed.</string>
+    <string name="session_heart_rate_at_minimum">Your heart rate stays high and the treadmill is already at its lowest speed.</string>
 
     <string name="session_channel_name">Session in progress</string>
     <string name="session_preparing">Preparing the session…</string>
@@ -150,6 +177,13 @@
     <string name="settings_language_system">Phone language</string>
     <string name="settings_language_english" translatable="false">English</string>
     <string name="settings_language_french" translatable="false">Français</string>
+
+    <string name="settings_regulation_title">Heart rate regulation</string>
+    <string name="settings_regulation_summary">On a step that targets a heart rate zone, Make It Run sets the speed itself, within the range your treadmill accepts. This says how boldly it corrects. Gentler is steadier but takes longer to reach the zone.</string>
+    <string name="settings_regulation_gentle">Gentle</string>
+    <string name="settings_regulation_normal">Normal</string>
+    <string name="settings_regulation_brisk">Brisk</string>
+    <string name="settings_regulation_option">At most %1$s km/h every %2$d s</string>
 
     <string name="settings_backup_title">Backup</string>
     <string name="settings_backup_summary">Save your workouts and your treadmill profile to a file that you keep yourself. It survives uninstalling the app, and importing it adds its workouts to the existing ones.</string>

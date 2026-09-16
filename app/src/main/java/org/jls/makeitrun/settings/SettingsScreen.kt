@@ -48,6 +48,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.jls.makeitrun.R
 import org.jls.makeitrun.data.TreadmillConflict
+import org.jls.makeitrun.session.RegulationResponsiveness
 import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -58,6 +59,7 @@ fun SettingsScreen(
 ) {
     val outcome by viewModel.outcome.collectAsStateWithLifecycle()
     val pendingImport by viewModel.pendingImport.collectAsStateWithLifecycle()
+    val responsiveness by viewModel.responsiveness.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
     val exportLauncher = rememberLauncherForActivityResult(
@@ -127,6 +129,13 @@ fun SettingsScreen(
             item { LanguageCard() }
 
             item {
+                RegulationCard(
+                    selected = responsiveness,
+                    onSelect = viewModel::setResponsiveness,
+                )
+            }
+
+            item {
                 BackupCard(
                     onExport = { exportLauncher.launch(suggestedFileName()) },
                     onImport = { importLauncher.launch(BACKUP_OPENABLE_TYPES) },
@@ -177,7 +186,7 @@ private fun LanguageCard() {
     ) {
         Column(Modifier.selectableGroup()) {
             AppLanguage.entries.forEach { candidate ->
-                LanguageRow(
+                RadioRow(
                     label = stringResource(candidate.labelResId),
                     selected = candidate == language,
                     onSelect = {
@@ -188,6 +197,38 @@ private fun LanguageCard() {
             }
         }
     }
+}
+
+@Composable
+private fun RegulationCard(
+    selected: RegulationResponsiveness,
+    onSelect: (RegulationResponsiveness) -> Unit,
+) {
+    SettingsCard(
+        title = stringResource(R.string.settings_regulation_title),
+        summary = stringResource(R.string.settings_regulation_summary),
+    ) {
+        Column(Modifier.selectableGroup()) {
+            RegulationResponsiveness.entries.forEach { candidate ->
+                RadioRow(
+                    label = stringResource(candidate.labelResId()),
+                    supporting = stringResource(
+                        R.string.settings_regulation_option,
+                        "%.1f".format(candidate.speedStepKmh),
+                        (candidate.settleMillis / 1_000).toInt(),
+                    ),
+                    selected = candidate == selected,
+                    onSelect = { onSelect(candidate) },
+                )
+            }
+        }
+    }
+}
+
+private fun RegulationResponsiveness.labelResId(): Int = when (this) {
+    RegulationResponsiveness.GENTLE -> R.string.settings_regulation_gentle
+    RegulationResponsiveness.NORMAL -> R.string.settings_regulation_normal
+    RegulationResponsiveness.BRISK -> R.string.settings_regulation_brisk
 }
 
 @Composable
@@ -237,7 +278,12 @@ private fun SettingsCard(
 }
 
 @Composable
-private fun LanguageRow(label: String, selected: Boolean, onSelect: () -> Unit) {
+private fun RadioRow(
+    label: String,
+    selected: Boolean,
+    onSelect: () -> Unit,
+    supporting: String? = null,
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -247,7 +293,16 @@ private fun LanguageRow(label: String, selected: Boolean, onSelect: () -> Unit) 
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         RadioButton(selected = selected, onClick = null)
-        Text(text = label, style = MaterialTheme.typography.bodyLarge)
+        Column {
+            Text(text = label, style = MaterialTheme.typography.bodyLarge)
+            supporting?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
     }
 }
 

@@ -31,6 +31,8 @@ import org.jls.makeitrun.R
 import org.jls.makeitrun.ui.MakeItRunTopBar
 import org.jls.makeitrun.ui.connection.ConnectionBanner
 import org.jls.makeitrun.ui.connection.ConnectionViewModel
+import org.jls.makeitrun.ui.connection.HeartRateBanner
+import org.jls.makeitrun.ui.connection.HeartRateConnectionViewModel
 import org.jls.makeitrun.workout.model.Formats
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,9 +45,11 @@ fun WorkoutListScreen(
     onOpenAbout: () -> Unit,
     viewModel: WorkoutListViewModel = hiltViewModel(),
     connectionViewModel: ConnectionViewModel = hiltViewModel(),
+    heartRateViewModel: HeartRateConnectionViewModel = hiltViewModel(),
 ) {
     val workouts by viewModel.workouts.collectAsStateWithLifecycle()
     val connection by connectionViewModel.uiState.collectAsStateWithLifecycle()
+    val heartRate by heartRateViewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -81,6 +85,10 @@ fun WorkoutListScreen(
         ) {
             item {
                 ConnectionBanner(state = connection, viewModel = connectionViewModel)
+            }
+
+            item {
+                HeartRateBanner(state = heartRate, viewModel = heartRateViewModel)
             }
 
             item {
@@ -125,11 +133,15 @@ private fun WorkoutRow(item: WorkoutListItem, onClick: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = stringResource(
-                        R.string.workout_summary_line,
-                        Formats.duration(item.summary.durationSeconds),
-                        Formats.distance(item.summary.distanceMeters),
-                    ),
+                    text = if (item.summary.hasDistance) {
+                        stringResource(
+                            R.string.workout_summary_line,
+                            Formats.duration(item.summary.durationSeconds),
+                            Formats.distance(item.summary.distanceMeters),
+                        )
+                    } else {
+                        Formats.duration(item.summary.durationSeconds)
+                    },
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(

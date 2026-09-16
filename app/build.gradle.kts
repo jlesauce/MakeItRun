@@ -73,6 +73,7 @@ room {
 
 dependencies {
     implementation(project(":ftms"))
+    implementation(project(":heartrate"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)

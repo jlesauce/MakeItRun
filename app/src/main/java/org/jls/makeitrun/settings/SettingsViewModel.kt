@@ -10,7 +10,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.jls.makeitrun.data.BackupRepository
+import org.jls.makeitrun.data.HeartRateSensorRepository
 import org.jls.makeitrun.data.PendingImport
+import org.jls.makeitrun.session.RegulationResponsiveness
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -25,10 +27,24 @@ sealed interface BackupOutcome {
 class SettingsViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val repository: BackupRepository,
+    private val sensorRepository: HeartRateSensorRepository,
 ) : ViewModel() {
 
     private val _outcome = MutableStateFlow<BackupOutcome?>(null)
     val outcome = _outcome.asStateFlow()
+
+    private val _responsiveness = MutableStateFlow(RegulationResponsiveness.DEFAULT)
+    val responsiveness = _responsiveness.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            sensorRepository.profile.collect { _responsiveness.value = it.responsiveness }
+        }
+    }
+
+    fun setResponsiveness(responsiveness: RegulationResponsiveness) {
+        viewModelScope.launch { sensorRepository.setResponsiveness(responsiveness) }
+    }
 
     private val _pendingImport = MutableStateFlow<PendingImport?>(null)
     val pendingImport = _pendingImport.asStateFlow()

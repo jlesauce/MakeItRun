@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import org.jls.makeitrun.data.HeartRateSensorRepository
 import org.jls.makeitrun.data.TreadmillProfileRepository
 import org.jls.makeitrun.data.WorkoutRepository
 import org.jls.makeitrun.ftms.FtmsTreadmillClient
@@ -19,6 +20,7 @@ class SessionViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val workoutRepository: WorkoutRepository,
     private val profileRepository: TreadmillProfileRepository,
+    private val sensorRepository: HeartRateSensorRepository,
     private val client: FtmsTreadmillClient,
     private val engine: WorkoutSessionEngine,
 ) : ViewModel() {
@@ -41,7 +43,11 @@ class SessionViewModel @Inject constructor(
             val capabilities = client.capabilities.value
                 ?: profileRepository.profile.first().capabilities
             WorkoutSessionService.start(context)
-            engine.start(workout, capabilities)
+            engine.start(
+                workout = workout,
+                capabilities = capabilities,
+                responsiveness = sensorRepository.current().responsiveness,
+            )
         }
     }
 

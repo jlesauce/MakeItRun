@@ -41,9 +41,20 @@ object WorkoutStepLabels {
 
     @Composable
     @ReadOnlyComposable
-    fun target(step: WorkoutStep, showPace: Boolean): String = Formats.target(
-        speedKmh = step.targetSpeedKmh,
-        showPace = showPace,
-        freeLabel = stringResource(R.string.session_free_pace),
-    )
+    fun target(step: WorkoutStep, showPace: Boolean): String {
+        val pace = step.heartRateTarget
+            ?.let { stringResource(R.string.editor_heart_rate_zone, it.minBpm, it.maxBpm) }
+            ?: Formats.target(
+                speedKmh = step.targetSpeedKmh,
+                showPace = showPace,
+                freeLabel = stringResource(R.string.session_free_pace),
+            )
+
+        val inclination = step.inclinationPercent ?: return pace
+        return stringResource(
+            R.string.step_target_with_inclination,
+            pace,
+            Formats.inclination(inclination),
+        )
+    }
 }

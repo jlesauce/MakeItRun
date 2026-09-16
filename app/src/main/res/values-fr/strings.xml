@@ -7,7 +7,6 @@
     <string name="menu_settings">Paramètres</string>
     <string name="menu_about">À propos</string>
     <string name="action_back">Retour</string>
-
     <string name="permission_title">Autorisation Bluetooth requise</string>
     <string name="permission_rationale">Make It Run a besoin du Bluetooth pour détecter votre tapis de course et lui transmettre vos entraînements.</string>
     <string name="permission_grant">Autoriser</string>
@@ -30,11 +29,22 @@
     <string name="device_rssi">%1$d dBm</string>
     <string name="device_supports_ftms">FTMS</string>
 
+    <string name="heart_rate_connected">%1$s</string>
+    <string name="heart_rate_disconnected">Capteur de fréquence cardiaque non connecté</string>
+    <string name="heart_rate_discovering">Lecture du capteur…</string>
+    <string name="heart_rate_no_sensor">Aucun capteur de fréquence cardiaque trouvé. Sur une montre Garmin, active « Diffuser la FC » dans Paramètres, Capteurs et accessoires, FC au poignet.</string>
+    <string name="heart_rate_led_description">Indicateur du capteur cardiaque</string>
+    <string name="heart_rate_waiting">En attente d\'une mesure…</string>
+    <string name="heart_rate_no_frames">Plus de trames reçues, la montre diffuse-t-elle toujours ?</string>
+    <string name="heart_rate_bpm">%1$d bpm</string>
+    <string name="heart_rate_bpm_with_battery">%1$d bpm · batterie %2$d%%</string>
+
     <string name="workouts_section">Mes entraînements :</string>
     <string name="workouts_empty">Aucun entraînement pour l\'instant. Touchez « + » pour en créer un.</string>
     <string name="workouts_locked">Connectez votre tapis une première fois pour pouvoir créer un entraînement : Make It Run a besoin de connaître ses vitesses et ses réglages.</string>
     <string name="workouts_create">Créer un entraînement</string>
     <string name="workout_summary_line">%1$s · %2$s</string>
+    <string name="step_target_with_inclination">%1$s · %2$s</string>
     <plurals name="workout_step_count">
         <item quantity="one">%1$d étape</item>
         <item quantity="other">%1$d étapes</item>
@@ -45,6 +55,7 @@
     <string name="workout_detail_edit">Modifier</string>
     <string name="workout_detail_delete">Supprimer</string>
     <string name="workout_detail_needs_connection">Connectez le tapis pour lancer cet entraînement.</string>
+    <string name="workout_detail_needs_heart_rate">Cet entraînement comporte des consignes de fréquence cardiaque. Connectez votre capteur pour le lancer.</string>
     <string name="workout_detail_estimate_partial">Estimation partielle : certaines étapes n\'ont pas d\'allure cible.</string>
 
     <string name="editor_title_new">Nouvel entraînement</string>
@@ -70,7 +81,11 @@
     <string name="editor_target_title_speed">Vitesse cible</string>
     <string name="editor_target_hint">Allure que Make It Run imposera au tapis pendant cette étape. « Libre » laisse le tapis à la vitesse du moment, sans lui envoyer de consigne.</string>
     <string name="editor_target_fixed">Imposée</string>
+    <string name="editor_target_heart_rate">Fréquence cardiaque</string>
     <string name="editor_target_free">Libre</string>
+    <string name="editor_heart_rate_zone">%1$d – %2$d bpm</string>
+    <string name="editor_heart_rate_hint">Make It Run ajuste la vitesse tout seul pour te maintenir dans cette zone. Il corrige lentement et par petits pas, parce que le cœur met jusqu\'à une minute à répondre à un changement d\'allure. Un capteur de fréquence cardiaque devra être connecté pour lancer cet entraînement.</string>
+    <string name="editor_heart_rate_bounds">Il restera entre %1$s et %2$s km/h, les vitesses qu\'accepte ton tapis.</string>
     <string name="editor_unit_pace">Allure (min/km)</string>
     <string name="editor_unit_speed">Vitesse (km/h)</string>
     <string name="editor_inclination">Inclinaison (%%)</string>
@@ -104,6 +119,17 @@
     <string name="session_finished_summary">%1$s parcourus en %2$s</string>
     <string name="session_close">Fermer</string>
     <string name="session_free_pace">Allure libre</string>
+    <string name="session_heart_rate_target">Cible %1$d – %2$d bpm</string>
+    <string name="session_heart_rate_smoothed">Lissée pour la régulation : %1$d bpm</string>
+    <string name="session_heart_rate_in_zone">Dans la zone</string>
+    <string name="session_heart_rate_below_zone">Sous la zone</string>
+    <string name="session_heart_rate_above_zone">Au-dessus de la zone</string>
+    <string name="session_heart_rate_unknown_zone">Pas de mesure</string>
+    <string name="session_heart_rate_waiting">En attente des premiers battements…</string>
+    <string name="session_heart_rate_signal_lost">Capteur muet : la vitesse est maintenue jusqu\'à ce qu\'il réponde de nouveau.</string>
+    <string name="session_heart_rate_not_worn">Le capteur ne détecte plus de contact : la vitesse est maintenue.</string>
+    <string name="session_heart_rate_at_maximum">Ta fréquence reste basse et le tapis est déjà à sa vitesse maximale.</string>
+    <string name="session_heart_rate_at_minimum">Ta fréquence reste haute et le tapis est déjà à sa vitesse minimale.</string>
 
     <string name="session_channel_name">Séance en cours</string>
     <string name="session_preparing">Préparation de la séance…</string>
@@ -147,6 +173,13 @@
     <string name="settings_language_title">Langue</string>
     <string name="settings_language_summary">Par défaut, Make It Run suit la langue du téléphone et bascule en anglais lorsque celle-ci n\'est pas disponible.</string>
     <string name="settings_language_system">Langue du téléphone</string>
+
+    <string name="settings_regulation_title">Régulation par fréquence cardiaque</string>
+    <string name="settings_regulation_summary">Sur une étape visant une zone de fréquence cardiaque, Make It Run règle la vitesse lui-même, dans la plage qu\'accepte ton tapis. Ce choix dit avec quelle franchise il corrige. Plus c\'est doux, plus c\'est stable, mais plus il met de temps à atteindre la zone.</string>
+    <string name="settings_regulation_gentle">Douce</string>
+    <string name="settings_regulation_normal">Normale</string>
+    <string name="settings_regulation_brisk">Réactive</string>
+    <string name="settings_regulation_option">Au plus %1$s km/h toutes les %2$d s</string>
 
     <string name="settings_backup_title">Sauvegarde</string>
     <string name="settings_backup_summary">Enregistrez vos entraînements et le profil de votre tapis dans un fichier que vous conservez vous-même. Il survit à la désinstallation de l\'application, et son import ajoute ses entraînements à ceux déjà présents.</string>

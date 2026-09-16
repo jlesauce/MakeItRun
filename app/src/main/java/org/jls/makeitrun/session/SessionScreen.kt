@@ -19,6 +19,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -28,6 +29,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.jls.makeitrun.R
 import org.jls.makeitrun.workout.WorkoutStepLabels
 import org.jls.makeitrun.workout.model.Formats
+import org.jls.makeitrun.workout.model.HeartRateTarget
 
 @Composable
 fun SessionScreen(
@@ -179,6 +181,10 @@ private fun RunningSession(
         modifier = Modifier.fillMaxWidth(),
     )
 
+    progress.currentStep.step.heartRateTarget?.let { target ->
+        HeartRateCard(target = target, regulation = progress.regulation)
+    }
+
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -235,6 +241,86 @@ private fun RunningSession(
             modifier = Modifier.weight(1f),
         ) {
             Text(stringResource(R.string.session_stop))
+        }
+    }
+}
+
+@Composable
+private fun HeartRateCard(target: HeartRateTarget, regulation: RegulationOutcome?) {
+    val zone = regulation?.zone ?: ZoneStatus.UNKNOWN
+    val accent = when (zone) {
+        ZoneStatus.IN_ZONE -> Color(0xFF2E7D32)
+        ZoneStatus.BELOW -> Color(0xFF1565C0)
+        ZoneStatus.ABOVE -> Color(0xFFEF6C00)
+        ZoneStatus.UNKNOWN -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                text = regulation?.beatsPerMinute?.let {
+                    stringResource(R.string.heart_rate_bpm, it)
+                } ?: stringResource(R.string.value_unavailable),
+                style = MaterialTheme.typography.displaySmall,
+                color = accent,
+            )
+            Text(
+                text = stringResource(
+                    R.string.session_heart_rate_target,
+                    target.minBpm,
+                    target.maxBpm,
+                ),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+
+            val smoothed = regulation?.smoothedBpm
+            if (smoothed != null && smoothed != regulation.beatsPerMinute) {
+                Text(
+                    text = stringResource(R.string.session_heart_rate_smoothed, smoothed),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.outline,
+                )
+            }
+            Text(
+                text = stringResource(
+                    when (zone) {
+                        ZoneStatus.IN_ZONE -> R.string.session_heart_rate_in_zone
+                        ZoneStatus.BELOW -> R.string.session_heart_rate_below_zone
+                        ZoneStatus.ABOVE -> R.string.session_heart_rate_above_zone
+                        ZoneStatus.UNKNOWN -> R.string.session_heart_rate_unknown_zone
+                    }
+                ),
+                style = MaterialTheme.typography.labelLarge,
+                color = accent,
+            )
+
+            regulation?.alert?.let { alert ->
+                Text(
+                    text = stringResource(
+                        when (alert) {
+                            RegulationAlert.WAITING_FOR_SIGNAL ->
+                                R.string.session_heart_rate_waiting
+
+                            RegulationAlert.SIGNAL_LOST -> R.string.session_heart_rate_signal_lost
+                            RegulationAlert.SENSOR_NOT_WORN -> R.string.session_heart_rate_not_worn
+                            RegulationAlert.SPEED_AT_MAXIMUM ->
+                                R.string.session_heart_rate_at_maximum
+
+                            RegulationAlert.SPEED_AT_MINIMUM ->
+                                R.string.session_heart_rate_at_minimum
+                        }
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                    textAlign = TextAlign.Center,
+                )
+            }
         }
     }
 }

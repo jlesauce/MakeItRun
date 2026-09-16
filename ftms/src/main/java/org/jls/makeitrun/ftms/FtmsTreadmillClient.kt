@@ -9,6 +9,7 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -55,19 +56,44 @@ class FtmsTreadmillClient(
 
     private val connectionMutex = Mutex()
 
+    private var desiredAddress: String? = null
+    private var reconnectJob: Job? = null
+
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
-    suspend fun connect(address: String) = connectionMutex.withLock {
-        disconnect()
-        _connectionState.value = TreadmillConnectionState.Connecting
+    suspend fun connect(address: String) {
+        reconnectJob?.cancel()
+        desiredAddress = address
+        attemptConnection(address, announceProgress = true)?.let { failure ->
+            _connectionState.value = TreadmillConnectionState.Failed(failure)
+        }
+    }
+
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+    private suspend fun attemptConnection(
+        address: String,
+        announceProgress: Boolean,
+    ): String? = connectionMutex.withLock {
+        teardown()
+        if (announceProgress) _connectionState.value = TreadmillConnectionState.Connecting
 
         try {
-            val client = ClientBleGatt.connect(context, address, scope)
+            val client = withTimeoutOrNull(CONNECTION_TIMEOUT_MS) {
+                ClientBleGatt.connect(context, address, scope)
+            } ?: throw FtmsException(
+                "Le tapis n'a pas repondu a la demande de connexion. Verifiez qu'il est allume " +
+                    "et qu'aucune autre application n'y est connectee."
+            )
             gatt = client
             observeDisconnection(client)
 
-            _connectionState.value = TreadmillConnectionState.DiscoveringServices
-            val service = client.discoverServices()
-                .findService(FtmsUuids.FITNESS_MACHINE_SERVICE)
+            if (announceProgress) {
+                _connectionState.value = TreadmillConnectionState.DiscoveringServices
+            }
+            val services = withTimeoutOrNull(DISCOVERY_TIMEOUT_MS) { client.discoverServices() }
+                ?: throw FtmsException(
+                    "Le tapis n'a pas publie ses services dans le temps imparti."
+                )
+            val service = services.findService(FtmsUuids.FITNESS_MACHINE_SERVICE)
                 ?: throw FtmsException(
                     "Cet appareil n'expose pas le service Fitness Machine (0x1826)."
                 )
@@ -83,23 +109,55 @@ class FtmsTreadmillClient(
 
             _capabilities.value = readCapabilities(service)
 
+            if (!client.isConnected) {
+                throw FtmsException(
+                    "La liaison avec le tapis s'est fermee pendant la lecture de ses capacites."
+                )
+            }
+
             Timber.i("Connecte a %s, pilotage %s", address, if (controlPoint != null) "disponible" else "indisponible")
             _connectionState.value = TreadmillConnectionState.Connected(
                 address = address,
                 canBeControlled = controlPoint != null,
             )
+            null
         } catch (cancellation: CancellationException) {
             throw cancellation
         } catch (error: Exception) {
             Timber.e(error, "Echec de la connexion a %s", address)
-            disconnect()
+            teardown()
+            error.message ?: error::class.java.simpleName
+        }
+    }
+
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+    private fun scheduleReconnection(address: String) {
+        reconnectJob?.cancel()
+        _connectionState.value = TreadmillConnectionState.Reconnecting
+        reconnectJob = scope.launch {
+            repeat(RECONNECTION_ATTEMPTS) { attempt ->
+                delay(RECONNECTION_DELAY_MILLIS)
+                if (desiredAddress != address) return@launch
+
+                Timber.i("Reconnexion au tapis %s, tentative %d", address, attempt + 1)
+                if (attemptConnection(address, announceProgress = false) == null) return@launch
+                _connectionState.value = TreadmillConnectionState.Reconnecting
+            }
             _connectionState.value = TreadmillConnectionState.Failed(
-                error.message ?: error::class.java.simpleName
+                "La liaison avec le tapis a ete perdue et n'a pas pu etre retablie."
             )
         }
     }
 
     fun disconnect() {
+        desiredAddress = null
+        reconnectJob?.cancel()
+        reconnectJob = null
+        teardown()
+        _connectionState.value = TreadmillConnectionState.Disconnected
+    }
+
+    private fun teardown() {
         observerJobs.forEach { it.cancel() }
         observerJobs.clear()
         controlPoint = null
@@ -112,7 +170,6 @@ class FtmsTreadmillClient(
         gatt = null
         _treadmillData.value = null
         _lastRawFrame.value = null
-        _connectionState.value = TreadmillConnectionState.Disconnected
     }
 
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
@@ -182,20 +239,26 @@ class FtmsTreadmillClient(
     private suspend fun readCapabilities(
         service: ClientBleGattService,
     ): TreadmillCapabilities {
-        suspend fun read(uuid: UUID): ByteArray? =
-            service.findCharacteristic(uuid)?.let { characteristic ->
-                runCatching { characteristic.read().value }
-                    .onFailure { Timber.d(it, "Lecture impossible de %s", uuid) }
-                    .getOrNull()
-            }
-
         val capabilities = TreadmillCapabilitiesParser.parse(
-            featurePayload = read(FtmsUuids.FITNESS_MACHINE_FEATURE),
-            speedRangePayload = read(FtmsUuids.SUPPORTED_SPEED_RANGE),
-            inclinationRangePayload = read(FtmsUuids.SUPPORTED_INCLINATION_RANGE),
+            featurePayload = read(service, FtmsUuids.FITNESS_MACHINE_FEATURE),
+            speedRangePayload = read(service, FtmsUuids.SUPPORTED_SPEED_RANGE),
+            inclinationRangePayload = read(service, FtmsUuids.SUPPORTED_INCLINATION_RANGE),
         )
         Timber.i("Capacites du tapis : %s", capabilities)
         return capabilities
+    }
+
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+    private suspend fun read(service: ClientBleGattService, uuid: UUID): ByteArray? {
+        val characteristic = service.findCharacteristic(uuid) ?: return null
+        return withTimeoutOrNull(CHARACTERISTIC_READ_TIMEOUT_MS) {
+            runCatching { characteristic.read().value }
+                .onFailure { Timber.w(it, "Lecture interrompue de %s", uuid) }
+                .getOrNull()
+        } ?: throw FtmsException(
+            "Le tapis a interrompu la lecture de ses capacites. Rapprochez le telephone du " +
+                "tapis et reessayez."
+        )
     }
 
     private fun observeTreadmillData(characteristic: ClientBleGattCharacteristic) {
@@ -223,15 +286,21 @@ class FtmsTreadmillClient(
         }
     }
 
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     private fun observeDisconnection(client: ClientBleGatt) {
         observerJobs += scope.launch {
             client.connectionState.collect { state ->
-                if (state == GattConnectionState.STATE_DISCONNECTED &&
-                    _connectionState.value !is TreadmillConnectionState.Failed
-                ) {
+                if (state != GattConnectionState.STATE_DISCONNECTED) return@collect
+
+                val wasEstablished =
+                    _connectionState.value is TreadmillConnectionState.Connected
+                if (_connectionState.value !is TreadmillConnectionState.Failed) {
                     _connectionState.value = TreadmillConnectionState.Disconnected
                     _treadmillData.value = null
                 }
+
+                val address = desiredAddress
+                if (wasEstablished && address != null) scheduleReconnection(address)
             }
         }
     }
@@ -261,7 +330,12 @@ class FtmsTreadmillClient(
     private fun ByteArray.toHexString(): String = joinToString(" ") { "%02X".format(it) }
 
     private companion object {
+        const val CONNECTION_TIMEOUT_MS = 15_000L
+        const val DISCOVERY_TIMEOUT_MS = 15_000L
+        const val CHARACTERISTIC_READ_TIMEOUT_MS = 5_000L
         const val CONTROL_RESPONSE_TIMEOUT_MS = 3_000L
+        const val RECONNECTION_ATTEMPTS = 3
+        const val RECONNECTION_DELAY_MILLIS = 5_000L
         const val STOP_PARAMETER: Byte = 0x01
         const val PAUSE_PARAMETER: Byte = 0x02
     }

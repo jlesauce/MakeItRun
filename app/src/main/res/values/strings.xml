@@ -16,8 +16,9 @@
     <string name="connection_connected">%1$s</string>
     <string name="connection_disconnected">Treadmill not connected</string>
     <string name="connection_connecting">Connecting…</string>
+    <string name="connection_reconnecting">Connection lost</string>
+    <string name="connection_stop_reconnecting">Stop reconnecting</string>
     <string name="connection_discovering">Reading capabilities…</string>
-    <string name="connection_failed">Failed: %1$s</string>
     <string name="connection_search">Search</string>
     <string name="connection_reconnect">Reconnect</string>
     <string name="connection_disconnect">Disconnect</string>

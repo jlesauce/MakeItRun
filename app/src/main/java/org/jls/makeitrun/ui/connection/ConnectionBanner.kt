@@ -14,9 +14,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -71,14 +75,6 @@ fun ConnectionBanner(
             ) {
                 DeviceList(state = state, viewModel = viewModel)
             }
-
-            state.error?.let {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error,
-                )
-            }
         }
     }
 }
@@ -88,6 +84,19 @@ private fun ConnectedAction(state: ConnectionUiState, viewModel: ConnectionViewM
     when {
         state.isConnected -> TextButton(onClick = viewModel::disconnect) {
             Text(stringResource(R.string.connection_disconnect))
+        }
+
+        state.connection is TreadmillConnectionState.Reconnecting -> Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            CircularProgressIndicator(modifier = Modifier.size(20.dp))
+            IconButton(onClick = viewModel::disconnect) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = stringResource(R.string.connection_stop_reconnecting),
+                )
+            }
         }
 
         state.connection is TreadmillConnectionState.Connecting ||
@@ -102,7 +111,8 @@ private fun ConnectedAction(state: ConnectionUiState, viewModel: ConnectionViewM
 @Composable
 private fun DisconnectedActions(state: ConnectionUiState, viewModel: ConnectionViewModel) {
     val isBusy = state.connection is TreadmillConnectionState.Connecting ||
-        state.connection is TreadmillConnectionState.DiscoveringServices
+        state.connection is TreadmillConnectionState.DiscoveringServices ||
+        state.connection is TreadmillConnectionState.Reconnecting
     if (isBusy) return
 
     Row(
@@ -223,6 +233,7 @@ private fun StatusLed(connection: TreadmillConnectionState) {
         is TreadmillConnectionState.Failed -> MaterialTheme.colorScheme.error
         TreadmillConnectionState.Connecting,
         TreadmillConnectionState.DiscoveringServices,
+        TreadmillConnectionState.Reconnecting,
             -> Color(0xFFF9A825)
 
         TreadmillConnectionState.Disconnected -> MaterialTheme.colorScheme.outlineVariant
@@ -246,6 +257,10 @@ private fun TreadmillConnectionState.label(knownName: String?): String = when (t
     TreadmillConnectionState.DiscoveringServices ->
         stringResource(R.string.connection_discovering)
 
-    is TreadmillConnectionState.Failed -> stringResource(R.string.connection_failed, reason)
-    TreadmillConnectionState.Disconnected -> stringResource(R.string.connection_disconnected)
+    TreadmillConnectionState.Reconnecting ->
+        stringResource(R.string.connection_reconnecting)
+
+    is TreadmillConnectionState.Failed,
+    TreadmillConnectionState.Disconnected,
+        -> stringResource(R.string.connection_disconnected)
 }

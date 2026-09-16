@@ -15,8 +15,9 @@
     <string name="connection_connected">%1$s</string>
     <string name="connection_disconnected">Tapis non connecté</string>
     <string name="connection_connecting">Connexion en cours…</string>
+    <string name="connection_reconnecting">Liaison perdue</string>
+    <string name="connection_stop_reconnecting">Arrêter la reconnexion</string>
     <string name="connection_discovering">Lecture des capacités…</string>
-    <string name="connection_failed">Échec : %1$s</string>
     <string name="connection_search">Rechercher</string>
     <string name="connection_reconnect">Reconnecter</string>
     <string name="connection_disconnect">Déconnecter</string>

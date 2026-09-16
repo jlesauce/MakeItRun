@@ -6,7 +6,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
@@ -26,7 +28,6 @@ data class ConnectionUiState(
     val showAllDevices: Boolean = false,
     val devices: List<DiscoveredTreadmill> = emptyList(),
     val profile: TreadmillProfile = TreadmillProfile(null, null, null, showPaceInsteadOfSpeed = true),
-    val error: String? = null,
 ) {
     val isConnected: Boolean get() = connection is TreadmillConnectionState.Connected
 
@@ -43,11 +44,17 @@ class ConnectionViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(ConnectionUiState())
     val uiState = _uiState.asStateFlow()
 
+    private val _messages = MutableSharedFlow<String>(extraBufferCapacity = 1)
+    val messages = _messages.asSharedFlow()
+
     private var scanJob: Job? = null
 
     init {
         viewModelScope.launch {
             client.connectionState.collect { state ->
+                if (state is TreadmillConnectionState.Failed) {
+                    _messages.tryEmit(state.reason)
+                }
                 if (state is TreadmillConnectionState.Connected) {
                     rememberTreadmill(
                         address = state.address,
@@ -79,14 +86,13 @@ class ConnectionViewModel @Inject constructor(
     )
     fun startScan() {
         scanJob?.cancel()
-        _uiState.update { it.copy(isScanning = true, devices = emptyList(), error = null) }
+        _uiState.update { it.copy(isScanning = true, devices = emptyList()) }
         scanJob = viewModelScope.launch {
             scanner.scan(fitnessMachinesOnly = !_uiState.value.showAllDevices)
                 .catch { error ->
                     Timber.e(error, "Le scan Bluetooth a echoue")
-                    _uiState.update {
-                        it.copy(isScanning = false, error = error.message)
-                    }
+                    error.message?.let(_messages::tryEmit)
+                    _uiState.update { it.copy(isScanning = false) }
                 }
                 .collect { devices -> _uiState.update { it.copy(devices = devices) } }
         }

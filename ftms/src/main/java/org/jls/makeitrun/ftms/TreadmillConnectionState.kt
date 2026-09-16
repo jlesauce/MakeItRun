@@ -8,6 +8,8 @@ sealed interface TreadmillConnectionState {
 
     data object DiscoveringServices : TreadmillConnectionState
 
+    data object Reconnecting : TreadmillConnectionState
+
     data class Connected(
         val address: String,
         val canBeControlled: Boolean,

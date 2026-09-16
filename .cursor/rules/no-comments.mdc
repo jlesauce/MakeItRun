@@ -1,0 +1,48 @@
+---
+description: Ne jamais ajouter de commentaires dans le code
+alwaysApply: true
+---
+
+# Pas de commentaires
+
+N'ajoute aucun commentaire dans le code que tu écris ou modifies : ni commentaire de ligne,
+ni bloc, ni KDoc/Javadoc, ni commentaire XML, ni en-tête de section dans les fichiers de build.
+
+Le code doit se suffire à lui-même. Si une portion mérite une explication, rends-la explicite
+par un nom de variable ou de fonction plus clair, ou par une extraction de fonction.
+
+Ce qui relève du contexte, de la justification d'un choix ou de la description d'un changement
+se dit dans la réponse du chat ou dans le message de commit, jamais dans le fichier.
+
+## Exemples
+
+```kotlin
+// ❌ À NE PAS FAIRE
+/** Efface le message une fois qu'il a été montré. */
+fun acknowledge() {
+    // remise à zéro de l'état
+    _outcome.value = null
+}
+
+// ✅ À FAIRE
+fun acknowledge() {
+    _outcome.value = null
+}
+```
+
+```kotlin
+// ❌ À NE PAS FAIRE
+// Android n'ordonne les installations que sur ce nombre, d'où le calcul ci-dessous.
+versionCode = versionMajor * 10_000 + versionMinor * 100 + versionPatch
+
+// ✅ À FAIRE
+versionCode = versionMajor * 10_000 + versionMinor * 100 + versionPatch
+```
+
+## Seule exception
+
+Une annotation exigée par un outil pour fonctionner (`// noinspection`, `<!-- suppress -->`,
+directive de linter, `@Suppress` sous forme de commentaire). Ce n'est pas de l'explication.
+
+Les commentaires déjà présents dans le dépôt ne sont pas à supprimer d'office : ne les retire
+que si l'utilisateur le demande, ou s'ils se trouvent dans une portion que tu réécris.

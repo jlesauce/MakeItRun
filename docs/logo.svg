@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108" width="108" height="108" role="img" aria-label="Make It Run">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="108" y2="108" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2F7FF0"/>
+      <stop offset="1" stop-color="#10357A"/>
+    </linearGradient>
+  </defs>
+  <rect width="108" height="108" rx="24" fill="url(#bg)"/>
+  <g transform="translate(14.64 12.75) scale(0.82)">
+    <path d="M22,78A38,38 0 1 1 74,78" fill="none" stroke="#9CCBFF" stroke-width="7" stroke-linecap="round"/>
+    <g transform="translate(8.46 8.73) scale(0.82)">
+      <path fill="#FFFFFF" d="M60,13.5a8.5,8.5 0 1,0 0,17a8.5,8.5 0 1,0 0,-17z"/>
+      <path d="M55,34L42,53" fill="none" stroke="#FFFFFF" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M55,36L70,44L78,33" fill="none" stroke="#FFFFFF" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M55,36L40,34L32,45" fill="none" stroke="#FFFFFF" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M42,53L58,62L53,79" fill="none" stroke="#FFFFFF" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M42,53L28,64L16,58" fill="none" stroke="#FFFFFF" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </g>
+</svg>

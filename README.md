@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/logo.svg" alt="Logo Make It Run" width="128" height="128">
+</p>
+
 # Make It Run
 
 Application Android qui pilote un tapis de course Bluetooth compatible **FTMS** (_Fitness Machine

@@ -6,10 +6,13 @@ import android.os.SystemClock
 import androidx.annotation.RequiresPermission
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -48,6 +51,7 @@ class HeartRateClient(
 
     private var desiredAddress: String? = null
     private var reconnectJob: Job? = null
+    private var disconnectJob: Job? = null
 
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     suspend fun connect(address: String) {
@@ -67,9 +71,7 @@ class HeartRateClient(
         if (announceProgress) _connectionState.value = HeartRateConnectionState.Connecting
 
         try {
-            val client = withTimeoutOrNull(CONNECTION_TIMEOUT_MS) {
-                ClientBleGatt.connect(context, address, scope)
-            } ?: throw HeartRateException(
+            val client = openGatt(address) ?: throw HeartRateException(
                 "Le capteur n'a pas repondu a la demande de connexion. Verifiez qu'il diffuse " +
                     "toujours sa frequence cardiaque et qu'aucun autre appareil ne l'utilise."
             )
@@ -117,6 +119,50 @@ class HeartRateClient(
     }
 
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+    private suspend fun openGatt(address: String): ClientBleGatt? {
+        val pending = scope.async { ClientBleGatt.connect(context, address, scope) }
+        val client = withTimeoutOrNull(CONNECTION_TIMEOUT_MS) { pending.await() }
+
+        if (client == null) {
+            scope.launch { discardLateConnection(pending, address) }
+            return null
+        }
+        if (!client.isConnected) {
+            closeQuietly(client)
+            return null
+        }
+        return client
+    }
+
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+    private suspend fun discardLateConnection(pending: Deferred<ClientBleGatt>, address: String) {
+        val late = withTimeoutOrNull(LATE_CONNECTION_GRACE_MS) { runCatching { pending.await() } }
+            ?.getOrNull()
+
+        if (late == null) {
+            pending.cancel()
+            Timber.w("Connexion au capteur %s jamais aboutie, tentative abandonnee", address)
+            return
+        }
+
+        Timber.w("Connexion au capteur %s arrivee apres le delai, fermeture", address)
+        closeQuietly(late)
+    }
+
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+    private suspend fun closeQuietly(client: ClientBleGatt) {
+        runCatching {
+            if (client.isConnected) {
+                client.disconnect()
+                withTimeoutOrNull(DISCONNECTION_TIMEOUT_MS) {
+                    client.connectionState.first { it == GattConnectionState.STATE_DISCONNECTED }
+                }
+            }
+            client.close()
+        }.onFailure { Timber.d(it, "Fermeture de la liaison GATT du capteur cardiaque") }
+    }
+
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     private fun scheduleReconnection(address: String) {
         reconnectJob?.cancel()
         _connectionState.value = HeartRateConnectionState.Reconnecting
@@ -151,28 +197,34 @@ class HeartRateClient(
         }
     }
 
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     fun disconnect() {
         desiredAddress = null
         reconnectJob?.cancel()
         reconnectJob = null
-        teardown()
         _connectionState.value = HeartRateConnectionState.Disconnected
+
+        disconnectJob?.cancel()
+        disconnectJob = scope.launch {
+            connectionMutex.withLock {
+                if (desiredAddress == null) teardown()
+            }
+        }
     }
 
-    private fun teardown() {
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+    private suspend fun teardown() {
         observerJobs.forEach { it.cancel() }
         observerJobs.clear()
-        gatt?.let { client ->
-            runCatching {
-                if (client.isConnected) client.disconnect()
-                client.close()
-            }.onFailure { Timber.d(it, "Fermeture de la liaison GATT du capteur cardiaque") }
-        }
-        gatt = null
         _signalLost.value = false
         _sample.value = null
         _batteryLevelPercent.value = null
         _lastRawFrame.value = null
+
+        val client = gatt ?: return
+        gatt = null
+        closeQuietly(client)
+        delay(GATT_SETTLE_MILLIS)
     }
 
     private fun observeMeasurements(characteristic: ClientBleGattCharacteristic) {
@@ -245,6 +297,9 @@ class HeartRateClient(
 
     private companion object {
         const val CONNECTION_TIMEOUT_MS = 15_000L
+        const val LATE_CONNECTION_GRACE_MS = 45_000L
+        const val DISCONNECTION_TIMEOUT_MS = 2_000L
+        const val GATT_SETTLE_MILLIS = 600L
         const val DISCOVERY_TIMEOUT_MS = 15_000L
         const val CHARACTERISTIC_READ_TIMEOUT_MS = 5_000L
         const val RECONNECTION_ATTEMPTS = 3

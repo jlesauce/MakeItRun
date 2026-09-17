@@ -20,7 +20,7 @@ import org.jls.makeitrun.heartrate.HeartRateClient
 import org.jls.makeitrun.heartrate.HeartRateConnectionState
 import org.jls.makeitrun.heartrate.HeartRateSample
 import org.jls.makeitrun.heartrate.HeartRateScanner
-import org.jls.makeitrun.session.RegulationResponsiveness
+import org.jls.makeitrun.workout.model.RegulationResponsiveness
 import timber.log.Timber
 import javax.inject.Inject
 

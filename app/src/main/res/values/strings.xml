@@ -45,7 +45,7 @@
     <string name="workouts_section">My workouts:</string>
     <string name="workouts_empty">No workouts yet. Tap “+” to create one.</string>
     <string name="workouts_locked_title">Treadmill not known yet</string>
-    <string name="workouts_locked">Connect your treadmill once so that you can create a workout: Make It Run needs to know its speeds and settings.</string>
+    <string name="workouts_locked">Connect your treadmill once to start or create a workout: Make It Run needs to know its speeds and settings.</string>
     <string name="workouts_create">Create a workout</string>
     <string name="workout_summary_line">%1$s · %2$s</string>
     <string name="step_target_with_inclination">%1$s · %2$s</string>
@@ -60,8 +60,6 @@
     <string name="workout_detail_delete">Delete</string>
     <string name="workout_detail_needs_connection">Connect the treadmill to start this workout.</string>
     <string name="workout_detail_needs_heart_rate">This workout has heart rate targets. Connect your sensor to start it.</string>
-    <string name="workout_detail_estimate_partial">Partial estimate: some steps have no target pace.</string>
-
     <string name="editor_title_new">New workout</string>
     <string name="editor_title_edit">Edit workout</string>
     <string name="editor_name">Workout name</string>
@@ -83,17 +81,23 @@
     <string name="editor_metres">Metres</string>
     <string name="editor_target_title_pace">Target pace</string>
     <string name="editor_target_title_speed">Target speed</string>
-    <string name="editor_target_hint">The pace Make It Run will impose on the treadmill during this step. “Free” leaves the treadmill at its current speed, without sending it any command.</string>
     <string name="editor_target_fixed">Imposed</string>
     <string name="editor_target_heart_rate">Heart rate</string>
     <string name="editor_target_free">Free</string>
     <string name="editor_heart_rate_zone">%1$d – %2$d bpm</string>
     <string name="editor_heart_rate_hint">Make It Run adjusts the speed by itself to hold you in this zone. It corrects slowly and in small steps, because the heart takes up to a minute to answer a change of pace. A heart rate sensor must be connected to start this workout.</string>
-    <string name="editor_heart_rate_bounds">It will stay between %1$s and %2$s km/h, the speeds your treadmill accepts.</string>
+    <string name="editor_heart_rate_manual">Enter the zone</string>
+    <string name="editor_heart_rate_min">Min (bpm)</string>
+    <string name="editor_heart_rate_max">Max (bpm)</string>
+    <string name="editor_heart_rate_range_bounds">From %1$d to %2$d bpm, at least %3$d bpm apart.</string>
+    <string name="editor_regulation">Speed correction</string>
+    <string name="editor_regulation_default">From settings</string>
+    <string name="editor_regulation_hint">By default the step follows the choice made in the settings. A gentle correction keeps long steady blocks stable; a brisk one reaches the zone sooner, at the cost of a pace that moves around more.</string>
     <string name="editor_unit_pace">Pace (min/km)</string>
     <string name="editor_unit_speed">Speed (km/h)</string>
-    <string name="editor_inclination">Incline (%%)</string>
+    <string name="editor_inclination">Incline (%)</string>
     <string name="editor_speed_bounds">Your treadmill accepts %1$s to %2$s km/h.</string>
+    <string name="editor_pace_bounds">Your treadmill accepts %1$s to %2$s min/km.</string>
     <string name="editor_target_manual_pace">Enter the pace</string>
     <string name="editor_target_manual_speed">Enter the speed</string>
     <string name="editor_target_manual_hint">Tap the value to type it in.</string>
@@ -118,13 +122,14 @@
     <string name="session_total">Total: %1$s · %2$s</string>
     <string name="session_pause">Pause</string>
     <string name="session_resume">Resume</string>
+    <string name="session_skip_step">Next step</string>
     <string name="session_stop">Stop</string>
     <string name="session_finished">Session complete</string>
     <string name="session_finished_summary">%1$s covered in %2$s</string>
     <string name="session_close">Close</string>
     <string name="session_free_pace">Free pace</string>
     <string name="session_heart_rate_target">Target %1$d – %2$d bpm</string>
-    <string name="session_heart_rate_smoothed">Smoothed for regulation: %1$d bpm</string>
+    <string name="session_heart_rate_smoothed">(%1$d)</string>
     <string name="session_heart_rate_in_zone">In the zone</string>
     <string name="session_heart_rate_below_zone">Below the zone</string>
     <string name="session_heart_rate_above_zone">Above the zone</string>
@@ -138,8 +143,8 @@
     <string name="session_channel_name">Session in progress</string>
     <string name="session_preparing">Preparing the session…</string>
     <string name="session_countdown_notification">Starting in %1$d s</string>
-    <string name="session_running_notification">Step %1$d of %2$d</string>
-    <string name="session_paused_notification">Session paused</string>
+    <string name="session_running_notification">Step %1$d/%2$d · %3$s · %4$s left</string>
+    <string name="session_paused_notification">Paused · step %1$d/%2$d</string>
 
     <string name="metrics_title">Live metrics</string>
     <string name="metric_speed">Speed</string>

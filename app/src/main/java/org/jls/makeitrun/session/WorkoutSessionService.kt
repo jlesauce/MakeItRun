@@ -21,6 +21,8 @@ import org.jls.makeitrun.MainActivity
 import org.jls.makeitrun.R
 import org.jls.makeitrun.di.ApplicationScope
 import org.jls.makeitrun.ftms.FtmsTreadmillClient
+import org.jls.makeitrun.workout.WorkoutStepLabels
+import org.jls.makeitrun.workout.model.Formats
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -42,33 +44,55 @@ class WorkoutSessionService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         createNotificationChannel()
-        startInForeground(buildNotification(getString(R.string.session_preparing)))
+        startInForeground(
+            buildNotification(
+                title = getString(R.string.app_name),
+                text = getString(R.string.session_preparing),
+            )
+        )
 
         stateJob?.cancel()
         stateJob = scope.launch {
+            var sessionStarted = false
             engine.state.collectLatest { state ->
-                if (state.isActive) {
-                    notify(state.toNotificationText())
-                } else {
-                    stopSelf()
+                when {
+                    state.isActive -> {
+                        sessionStarted = true
+                        notify(state.toNotificationTitle(), state.toNotificationText())
+                    }
+
+                    state is SessionState.Idle && !sessionStarted -> Unit
+                    else -> stopWithoutNotification()
                 }
             }
         }
 
-        return START_STICKY
+        return START_NOT_STICKY
     }
 
     override fun onTaskRemoved(rootIntent: Intent?) {
         engine.stop()
         client.disconnect()
-        stopSelf()
+        stopWithoutNotification()
         super.onTaskRemoved(rootIntent)
     }
 
     override fun onDestroy() {
         stateJob?.cancel()
         stateJob = null
+        getSystemService(NotificationManager::class.java).cancel(NOTIFICATION_ID)
         super.onDestroy()
+    }
+
+    private fun stopWithoutNotification() {
+        ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
+        stopSelf()
+    }
+
+    private fun SessionState.toNotificationTitle(): String = when (this) {
+        is SessionState.Running -> progress.workoutName
+        is SessionState.Paused -> progress.workoutName
+        else -> getString(R.string.app_name)
     }
 
     private fun SessionState.toNotificationText(): String = when (this) {
@@ -79,18 +103,30 @@ class WorkoutSessionService : Service() {
             R.string.session_running_notification,
             progress.stepIndex + 1,
             progress.stepCount,
+            getString(WorkoutStepLabels.typeNameRes(progress.currentStep.step.type)),
+            progress.remaining.toText(),
         )
 
-        is SessionState.Paused -> getString(R.string.session_paused_notification)
+        is SessionState.Paused -> getString(
+            R.string.session_paused_notification,
+            progress.stepIndex + 1,
+            progress.stepCount,
+        )
+
         else -> getString(R.string.session_preparing)
     }
 
-    private fun notify(text: String) {
-        val manager = getSystemService(NotificationManager::class.java)
-        manager.notify(NOTIFICATION_ID, buildNotification(text))
+    private fun StepRemaining.toText(): String = when (this) {
+        is StepRemaining.Seconds -> Formats.duration(value)
+        is StepRemaining.Meters -> Formats.distance(value)
     }
 
-    private fun buildNotification(text: String): Notification {
+    private fun notify(title: String, text: String) {
+        val manager = getSystemService(NotificationManager::class.java)
+        manager.notify(NOTIFICATION_ID, buildNotification(title, text))
+    }
+
+    private fun buildNotification(title: String, text: String): Notification {
         val openApp = PendingIntent.getActivity(
             this,
             0,
@@ -100,7 +136,7 @@ class WorkoutSessionService : Service() {
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_media_play)
-            .setContentTitle(getString(R.string.app_name))
+            .setContentTitle(title)
             .setContentText(text)
             .setContentIntent(openApp)
             .setOngoing(true)

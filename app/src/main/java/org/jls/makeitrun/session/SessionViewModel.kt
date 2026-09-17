@@ -55,6 +55,8 @@ class SessionViewModel @Inject constructor(
 
     fun resume() = engine.resume()
 
+    fun skipStep() = engine.skipStep()
+
     fun stop() {
         engine.stop()
         WorkoutSessionService.stop(context)

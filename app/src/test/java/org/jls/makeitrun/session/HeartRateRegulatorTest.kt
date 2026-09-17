@@ -4,6 +4,7 @@ import org.jls.makeitrun.ftms.TreadmillCapabilities
 import org.jls.makeitrun.heartrate.HeartRateMeasurement
 import org.jls.makeitrun.heartrate.HeartRateSample
 import org.jls.makeitrun.workout.model.HeartRateTarget
+import org.jls.makeitrun.workout.model.RegulationResponsiveness
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -244,6 +245,37 @@ class HeartRateRegulatorTest {
             RegulationResponsiveness.fromName("SOMETHING_ELSE"),
         )
         assertEquals(RegulationResponsiveness.DEFAULT, RegulationResponsiveness.fromName(null))
+    }
+
+    @Test
+    fun `the starting speed of a zone grows with the beats it asks for`() {
+        val easy = HeartRateRegulator.startingSpeedKmh(
+            target = HeartRateTarget(minBpm = 124, maxBpm = 143),
+            speedRange = SPEED_RANGE,
+        )
+        val hard = HeartRateRegulator.startingSpeedKmh(
+            target = HeartRateTarget(minBpm = 165, maxBpm = 175),
+            speedRange = SPEED_RANGE,
+        )
+
+        assertTrue("$easy km/h should be a running pace", easy in 8.0..11.0)
+        assertTrue("$hard km/h should be faster than $easy km/h", hard > easy)
+    }
+
+    @Test
+    fun `a starting speed the treadmill cannot hold is brought back in range`() {
+        val range = TreadmillCapabilities.ValueRange(
+            minimum = 2.0,
+            maximum = 8.0,
+            increment = 0.5,
+        )
+
+        val speed = HeartRateRegulator.startingSpeedKmh(
+            target = HeartRateTarget(minBpm = 175, maxBpm = 185),
+            speedRange = range,
+        )
+
+        assertEquals(8.0, speed, DELTA)
     }
 
     private fun HeartRateRegulator.feed(

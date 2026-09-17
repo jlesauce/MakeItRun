@@ -124,15 +124,6 @@ fun WorkoutDetailScreen(
                                 ),
                                 style = MaterialTheme.typography.bodyMedium,
                             )
-                            if (summary.hasDistance && !summary.isComplete) {
-                                Text(
-                                    text = stringResource(
-                                        R.string.workout_detail_estimate_partial
-                                    ),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.outline,
-                                )
-                            }
                         }
                     }
                 }

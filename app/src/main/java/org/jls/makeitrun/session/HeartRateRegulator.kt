@@ -3,6 +3,7 @@ package org.jls.makeitrun.session
 import org.jls.makeitrun.ftms.TreadmillCapabilities
 import org.jls.makeitrun.heartrate.HeartRateSample
 import org.jls.makeitrun.workout.model.HeartRateTarget
+import org.jls.makeitrun.workout.model.RegulationResponsiveness
 import kotlin.math.exp
 import kotlin.math.roundToInt
 
@@ -132,6 +133,22 @@ class HeartRateRegulator(
         const val SIGNAL_TIMEOUT_MILLIS = 10_000L
         const val SMOOTHING_TIME_CONSTANT_SECONDS = 10.0
         const val WARM_UP_MILLIS = 15_000L
+
+        fun startingSpeedKmh(
+            target: HeartRateTarget,
+            speedRange: TreadmillCapabilities.ValueRange,
+        ): Double {
+            val speedPerBeat = (BRISK_ANCHOR_SPEED_KMH - EASY_ANCHOR_SPEED_KMH) /
+                (BRISK_ANCHOR_BPM - EASY_ANCHOR_BPM)
+            val estimate = EASY_ANCHOR_SPEED_KMH +
+                (target.centerBpm - EASY_ANCHOR_BPM) * speedPerBeat
+            return speedRange.coerce(estimate)
+        }
+
+        private const val EASY_ANCHOR_BPM = 110
+        private const val EASY_ANCHOR_SPEED_KMH = 7.0
+        private const val BRISK_ANCHOR_BPM = 170
+        private const val BRISK_ANCHOR_SPEED_KMH = 14.0
     }
 }
 
@@ -157,20 +174,4 @@ enum class RegulationAlert {
     SENSOR_NOT_WORN,
     SPEED_AT_MAXIMUM,
     SPEED_AT_MINIMUM,
-}
-
-enum class RegulationResponsiveness(
-    val settleMillis: Long,
-    val speedStepKmh: Double,
-) {
-    GENTLE(settleMillis = 60_000L, speedStepKmh = 0.3),
-    NORMAL(settleMillis = 45_000L, speedStepKmh = 0.5),
-    BRISK(settleMillis = 30_000L, speedStepKmh = 0.8);
-
-    companion object {
-        val DEFAULT = NORMAL
-
-        fun fromName(name: String?): RegulationResponsiveness =
-            entries.firstOrNull { it.name == name } ?: DEFAULT
-    }
 }

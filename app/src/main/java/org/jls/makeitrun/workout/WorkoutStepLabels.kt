@@ -7,22 +7,23 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import org.jls.makeitrun.R
 import org.jls.makeitrun.workout.model.Formats
+import org.jls.makeitrun.workout.model.RegulationResponsiveness
 import org.jls.makeitrun.workout.model.StepDuration
 import org.jls.makeitrun.workout.model.StepType
 import org.jls.makeitrun.workout.model.WorkoutStep
 
 object WorkoutStepLabels {
 
+    fun typeNameRes(type: StepType): Int = when (type) {
+        StepType.WARM_UP -> R.string.step_type_warm_up
+        StepType.RUN -> R.string.step_type_run
+        StepType.RECOVER -> R.string.step_type_recover
+        StepType.COOL_DOWN -> R.string.step_type_cool_down
+    }
+
     @Composable
     @ReadOnlyComposable
-    fun typeName(type: StepType): String = stringResource(
-        when (type) {
-            StepType.WARM_UP -> R.string.step_type_warm_up
-            StepType.RUN -> R.string.step_type_run
-            StepType.RECOVER -> R.string.step_type_recover
-            StepType.COOL_DOWN -> R.string.step_type_cool_down
-        }
-    )
+    fun typeName(type: StepType): String = stringResource(typeNameRes(type))
 
     @Composable
     fun typeColor(type: StepType): Color = when (type) {
@@ -31,6 +32,16 @@ object WorkoutStepLabels {
         StepType.RECOVER -> Color(0xFF42A5F5)
         StepType.COOL_DOWN -> Color(0xFF8D6E63)
     }
+
+    @Composable
+    @ReadOnlyComposable
+    fun regulationName(responsiveness: RegulationResponsiveness): String = stringResource(
+        when (responsiveness) {
+            RegulationResponsiveness.GENTLE -> R.string.settings_regulation_gentle
+            RegulationResponsiveness.NORMAL -> R.string.settings_regulation_normal
+            RegulationResponsiveness.BRISK -> R.string.settings_regulation_brisk
+        }
+    )
 
     @Composable
     @ReadOnlyComposable

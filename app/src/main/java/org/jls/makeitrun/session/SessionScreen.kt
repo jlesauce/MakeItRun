@@ -3,6 +3,7 @@ package org.jls.makeitrun.session
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -36,6 +37,7 @@ import org.jls.makeitrun.workout.model.HeartRateTarget
 
 @Composable
 fun SessionScreen(
+    contentPadding: PaddingValues,
     workoutId: Long,
     onFinished: () -> Unit,
     viewModel: SessionViewModel = hiltViewModel(),
@@ -54,6 +56,7 @@ fun SessionScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .padding(contentPadding)
             .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -67,6 +70,7 @@ fun SessionScreen(
                 isPaused = false,
                 onPause = viewModel::pause,
                 onResume = viewModel::resume,
+                onSkip = viewModel::skipStep,
                 onStop = {
                     viewModel.stop()
                     onFinished()
@@ -79,6 +83,7 @@ fun SessionScreen(
                 isPaused = true,
                 onPause = viewModel::pause,
                 onResume = viewModel::resume,
+                onSkip = viewModel::skipStep,
                 onStop = {
                     viewModel.stop()
                     onFinished()
@@ -134,6 +139,7 @@ private fun ColumnScope.RunningSession(
     isPaused: Boolean,
     onPause: () -> Unit,
     onResume: () -> Unit,
+    onSkip: () -> Unit,
     onStop: () -> Unit,
 ) {
     Text(
@@ -231,13 +237,30 @@ private fun ColumnScope.RunningSession(
             .heightIn(min = 96.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        OutlinedButton(
-            onClick = if (isPaused) onResume else onPause,
+        Column(
             modifier = Modifier.fillMaxHeight(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text(
-                stringResource(if (isPaused) R.string.session_resume else R.string.session_pause)
-            )
+            OutlinedButton(
+                onClick = if (isPaused) onResume else onPause,
+                modifier = Modifier.weight(1f),
+            ) {
+                Text(
+                    stringResource(
+                        if (isPaused) R.string.session_resume else R.string.session_pause
+                    )
+                )
+            }
+            OutlinedButton(
+                onClick = onSkip,
+                enabled = !isPaused && progress.nextStep != null,
+                modifier = Modifier.weight(1f),
+            ) {
+                Text(
+                    text = stringResource(R.string.session_skip_step),
+                    textAlign = TextAlign.Center,
+                )
+            }
         }
         Button(
             onClick = onStop,
@@ -274,13 +297,23 @@ private fun HeartRateCard(target: HeartRateTarget, regulation: RegulationOutcome
             verticalArrangement = Arrangement.spacedBy(4.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(
-                text = regulation?.beatsPerMinute?.let {
-                    stringResource(R.string.heart_rate_bpm, it)
-                } ?: stringResource(R.string.value_unavailable),
-                style = MaterialTheme.typography.displaySmall,
-                color = accent,
-            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = regulation?.beatsPerMinute?.let {
+                        stringResource(R.string.heart_rate_bpm, it)
+                    } ?: stringResource(R.string.value_unavailable),
+                    style = MaterialTheme.typography.displaySmall,
+                    color = accent,
+                    modifier = Modifier.alignByBaseline(),
+                )
+                regulation?.smoothedBpm?.let { smoothed ->
+                    Text(
+                        text = stringResource(R.string.session_heart_rate_smoothed, smoothed),
+                        style = MaterialTheme.typography.headlineSmall,
+                        modifier = Modifier.alignByBaseline(),
+                    )
+                }
+            }
             Text(
                 text = stringResource(
                     R.string.session_heart_rate_target,
@@ -289,15 +322,6 @@ private fun HeartRateCard(target: HeartRateTarget, regulation: RegulationOutcome
                 ),
                 style = MaterialTheme.typography.bodyMedium,
             )
-
-            val smoothed = regulation?.smoothedBpm
-            if (smoothed != null && smoothed != regulation.beatsPerMinute) {
-                Text(
-                    text = stringResource(R.string.session_heart_rate_smoothed, smoothed),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.outline,
-                )
-            }
             Text(
                 text = stringResource(
                     when (zone) {

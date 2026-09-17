@@ -25,10 +25,11 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        val sessionToResume = engine.runningWorkoutId
         setContent {
             MakeItRunTheme {
                 PermissionGate {
-                    MakeItRunApp()
+                    MakeItRunApp(sessionToResume = sessionToResume)
                 }
             }
         }

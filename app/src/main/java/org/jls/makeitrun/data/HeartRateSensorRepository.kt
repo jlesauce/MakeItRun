@@ -10,7 +10,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import org.jls.makeitrun.session.RegulationResponsiveness
+import org.jls.makeitrun.workout.model.RegulationResponsiveness
 import javax.inject.Inject
 import javax.inject.Singleton
 

@@ -30,6 +30,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -124,17 +125,26 @@ fun WorkoutListScreen(
                 )
             }
 
-            when {
-                !connection.hasKnownTreadmill -> item {
-                    EmptyMessage(stringResource(R.string.workouts_locked))
+            if (!connection.hasKnownTreadmill) {
+                item {
+                    Text(
+                        text = stringResource(R.string.workouts_locked),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 4.dp),
+                    )
                 }
+            }
 
-                workouts.isEmpty() -> item {
-                    EmptyMessage(stringResource(R.string.workouts_empty))
-                }
-
-                else -> items(workouts, key = { it.workout.id }) { item ->
-                    WorkoutRow(item = item, onClick = { onOpenWorkout(item.workout.id) })
+            if (workouts.isEmpty()) {
+                item { EmptyMessage(stringResource(R.string.workouts_empty)) }
+            } else {
+                items(workouts, key = { it.workout.id }) { item ->
+                    WorkoutRow(
+                        item = item,
+                        enabled = connection.hasKnownTreadmill,
+                        onClick = { onOpenWorkout(item.workout.id) },
+                    )
                 }
             }
         }
@@ -156,8 +166,14 @@ private fun TreadmillRequiredDialog(onDismiss: () -> Unit) {
 }
 
 @Composable
-private fun WorkoutRow(item: WorkoutListItem, onClick: () -> Unit) {
-    Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+private fun WorkoutRow(item: WorkoutListItem, enabled: Boolean, onClick: () -> Unit) {
+    Card(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = Modifier
+            .fillMaxWidth()
+            .alpha(if (enabled) 1f else LOCKED_ALPHA),
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -204,3 +220,5 @@ private fun EmptyMessage(message: String) {
         modifier = Modifier.padding(vertical = 24.dp),
     )
 }
+
+private const val LOCKED_ALPHA = 0.38f

@@ -38,6 +38,7 @@ import org.jls.makeitrun.workout.WorkoutStepLabels
 import org.jls.makeitrun.workout.model.Formats
 import org.jls.makeitrun.workout.model.HeartRateTarget
 import org.jls.makeitrun.workout.model.Pace
+import org.jls.makeitrun.workout.model.RegulationResponsiveness
 import org.jls.makeitrun.workout.model.StepType
 import kotlin.math.roundToInt
 
@@ -121,12 +122,6 @@ fun StepEditorSheet(
                     else R.string.editor_target_title_speed
                 ),
             ) {
-                Text(
-                    text = stringResource(R.string.editor_target_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.outline,
-                )
-
                 ChipRow {
                     FilterChip(
                         selected = draft.targetMode == StepTargetMode.SPEED,
@@ -159,10 +154,17 @@ fun StepEditorSheet(
                     StepTargetMode.HEART_RATE -> HeartRateZonePicker(
                         draft = draft,
                         capabilities = capabilities,
+                        showPace = showPace,
                         onDraftChange = onDraftChange,
                     )
 
                     StepTargetMode.FREE -> Unit
+                }
+            }
+
+            if (draft.targetMode == StepTargetMode.HEART_RATE) {
+                Section(stringResource(R.string.editor_regulation)) {
+                    RegulationPicker(draft = draft, onDraftChange = onDraftChange)
                 }
             }
 
@@ -225,14 +227,9 @@ private fun TargetPicker(
     }
 
     if (showPace) {
-        val fastest = maxOf(
-            Pace.secondsPerKmFrom(speedRange.maximum) ?: FASTEST_PACE_SECONDS,
-            FASTEST_PACE_SECONDS,
-        )
-        val slowest = minOf(
-            Pace.secondsPerKmFrom(speedRange.minimum) ?: SLOWEST_PACE_SECONDS,
-            SLOWEST_PACE_SECONDS,
-        )
+        val bounds = paceBounds(speedRange)
+        val fastest = bounds.first
+        val slowest = bounds.last
         val current = Pace.secondsPerKmFrom(draft.targetSpeedKmh) ?: fastest
 
         Slider(
@@ -260,14 +257,7 @@ private fun TargetPicker(
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.outline,
     )
-    Text(
-        text = stringResource(
-            R.string.editor_speed_bounds,
-            "%.1f".format(speedRange.minimum),
-            "%.1f".format(speedRange.maximum),
-        ),
-        style = MaterialTheme.typography.bodySmall,
-    )
+    Text(text = boundsLabel(speedRange, showPace), style = MaterialTheme.typography.bodySmall)
 
     if (isTyping) {
         TargetInputDialog(
@@ -296,9 +286,10 @@ private fun TargetInputDialog(
     var seconds by remember { mutableStateOf("%02d".format(initialPace % 60)) }
     var speed by remember { mutableStateOf("%.1f".format(speedKmh)) }
 
+    val bounds = paceBounds(speedRange)
     val resolved: Double? = if (showPace) {
         val total = (minutes.toIntOrNull() ?: 0) * 60 + (seconds.toIntOrNull() ?: 0)
-        Pace.speedKmhFrom(total)
+        Pace.speedKmhFrom(total.coerceIn(bounds))
     } else {
         speed.replace(',', '.').toDoubleOrNull()
     }
@@ -344,11 +335,7 @@ private fun TargetInputDialog(
                 }
 
                 Text(
-                    text = stringResource(
-                        R.string.editor_speed_bounds,
-                        "%.1f".format(speedRange.minimum),
-                        "%.1f".format(speedRange.maximum),
-                    ),
+                    text = boundsLabel(speedRange, showPace),
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
@@ -373,18 +360,22 @@ private fun TargetInputDialog(
 private fun HeartRateZonePicker(
     draft: StepDraft,
     capabilities: TreadmillCapabilities,
+    showPace: Boolean,
     onDraftChange: (StepDraft) -> Unit,
 ) {
     val speedRange = capabilities.speedRange ?: TreadmillCapabilities.UNKNOWN.speedRange!!
+    var isTyping by remember { mutableStateOf(false) }
 
-    Text(
-        text = stringResource(
-            R.string.editor_heart_rate_zone,
-            draft.heartRateMinBpm,
-            draft.heartRateMaxBpm,
-        ),
-        style = MaterialTheme.typography.headlineSmall,
-    )
+    TextButton(onClick = { isTyping = true }) {
+        Text(
+            text = stringResource(
+                R.string.editor_heart_rate_zone,
+                draft.heartRateMinBpm,
+                draft.heartRateMaxBpm,
+            ),
+            style = MaterialTheme.typography.headlineSmall,
+        )
+    }
 
     RangeSlider(
         value = draft.heartRateMinBpm.toFloat()..draft.heartRateMaxBpm.toFloat(),
@@ -403,18 +394,160 @@ private fun HeartRateZonePicker(
     )
 
     Text(
-        text = stringResource(R.string.editor_heart_rate_hint),
+        text = stringResource(R.string.editor_target_manual_hint),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.outline,
     )
     Text(
-        text = stringResource(
-            R.string.editor_heart_rate_bounds,
-            "%.1f".format(speedRange.minimum),
-            "%.1f".format(speedRange.maximum),
-        ),
+        text = stringResource(R.string.editor_heart_rate_hint),
         style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.outline,
     )
+    Text(text = boundsLabel(speedRange, showPace), style = MaterialTheme.typography.bodySmall)
+
+    if (isTyping) {
+        HeartRateZoneInputDialog(
+            minBpm = draft.heartRateMinBpm,
+            maxBpm = draft.heartRateMaxBpm,
+            onDismiss = { isTyping = false },
+            onConfirm = { minimum, maximum ->
+                onDraftChange(draft.copy(heartRateMinBpm = minimum, heartRateMaxBpm = maximum))
+                isTyping = false
+            },
+        )
+    }
+}
+
+@Composable
+private fun HeartRateZoneInputDialog(
+    minBpm: Int,
+    maxBpm: Int,
+    onDismiss: () -> Unit,
+    onConfirm: (Int, Int) -> Unit,
+) {
+    var minimum by remember { mutableStateOf(minBpm.toString()) }
+    var maximum by remember { mutableStateOf(maxBpm.toString()) }
+
+    val resolved = resolveHeartRateZone(minimum.toIntOrNull(), maximum.toIntOrNull())
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.editor_heart_rate_manual)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    NumberField(
+                        value = minimum,
+                        label = stringResource(R.string.editor_heart_rate_min),
+                        onValueChange = { minimum = it },
+                        modifier = Modifier.weight(1f),
+                    )
+                    NumberField(
+                        value = maximum,
+                        label = stringResource(R.string.editor_heart_rate_max),
+                        onValueChange = { maximum = it },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+
+                Text(
+                    text = stringResource(
+                        R.string.editor_heart_rate_range_bounds,
+                        HeartRateTarget.LOWEST_BPM,
+                        HeartRateTarget.HIGHEST_BPM,
+                        HeartRateTarget.NARROWEST_WIDTH_BPM,
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { resolved?.let { onConfirm(it.first, it.second) } },
+                enabled = resolved != null,
+            ) {
+                Text(stringResource(R.string.editor_done))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.editor_cancel))
+            }
+        },
+    )
+}
+
+private fun resolveHeartRateZone(minimum: Int?, maximum: Int?): Pair<Int, Int>? {
+    if (minimum == null || maximum == null) return null
+    if (maximum - minimum < HeartRateTarget.NARROWEST_WIDTH_BPM) return null
+    if (minimum < HeartRateTarget.LOWEST_BPM || maximum > HeartRateTarget.HIGHEST_BPM) return null
+    return minimum to maximum
+}
+
+private fun paceBounds(speedRange: TreadmillCapabilities.ValueRange): IntRange {
+    val fastest = maxOf(
+        Pace.secondsPerKmFrom(speedRange.maximum) ?: FASTEST_PACE_SECONDS,
+        FASTEST_PACE_SECONDS,
+    )
+    val slowest = minOf(
+        Pace.secondsPerKmFrom(speedRange.minimum) ?: SLOWEST_PACE_SECONDS,
+        SLOWEST_PACE_SECONDS,
+    )
+    return fastest..maxOf(slowest, fastest)
+}
+
+@Composable
+private fun boundsLabel(
+    speedRange: TreadmillCapabilities.ValueRange,
+    showPace: Boolean,
+): String = if (showPace) {
+    val bounds = paceBounds(speedRange)
+    stringResource(
+        R.string.editor_pace_bounds,
+        Pace.format(bounds.first),
+        Pace.format(bounds.last),
+    )
+} else {
+    stringResource(
+        R.string.editor_speed_bounds,
+        "%.1f".format(speedRange.minimum),
+        "%.1f".format(speedRange.maximum),
+    )
+}
+
+@Composable
+private fun RegulationPicker(draft: StepDraft, onDraftChange: (StepDraft) -> Unit) {
+    ChipRow {
+        FilterChip(
+            selected = draft.regulationResponsiveness == null,
+            onClick = { onDraftChange(draft.copy(regulationResponsiveness = null)) },
+            label = { Text(stringResource(R.string.editor_regulation_default)) },
+        )
+        RegulationResponsiveness.entries.forEach { candidate ->
+            FilterChip(
+                selected = draft.regulationResponsiveness == candidate,
+                onClick = { onDraftChange(draft.copy(regulationResponsiveness = candidate)) },
+                label = { Text(WorkoutStepLabels.regulationName(candidate)) },
+            )
+        }
+    }
+
+    Text(
+        text = stringResource(R.string.editor_regulation_hint),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.outline,
+    )
+
+    draft.regulationResponsiveness?.let { responsiveness ->
+        Text(
+            text = stringResource(
+                R.string.settings_regulation_option,
+                "%.1f".format(responsiveness.speedStepKmh),
+                (responsiveness.settleMillis / 1_000).toInt(),
+            ),
+            style = MaterialTheme.typography.bodySmall,
+        )
+    }
 }
 
 @Composable

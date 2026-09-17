@@ -10,6 +10,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -56,13 +57,21 @@ private enum class Tab(
 }
 
 @Composable
-fun MakeItRunApp() {
+fun MakeItRunApp(sessionToResume: Long? = null) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
 
     val openSettings = { navController.navigate(Routes.SETTINGS) }
     val openAbout = { navController.navigate(Routes.ABOUT) }
+
+    LaunchedEffect(Unit) {
+        val workoutId = sessionToResume ?: return@LaunchedEffect
+        navController.navigate(Routes.session(workoutId)) {
+            popUpTo(Routes.WORKOUTS)
+            launchSingleTop = true
+        }
+    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -127,6 +136,7 @@ fun MakeItRunApp() {
 
             composable(Routes.SESSION) { entry ->
                 SessionScreen(
+                    contentPadding = innerPadding,
                     workoutId = entry.workoutId(),
                     onFinished = navController::popBackStack,
                 )

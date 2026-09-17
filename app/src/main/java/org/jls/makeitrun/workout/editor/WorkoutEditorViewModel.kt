@@ -11,6 +11,7 @@ import org.jls.makeitrun.data.TreadmillProfileRepository
 import org.jls.makeitrun.data.WorkoutRepository
 import org.jls.makeitrun.ftms.TreadmillCapabilities
 import org.jls.makeitrun.workout.model.HeartRateTarget
+import org.jls.makeitrun.workout.model.RegulationResponsiveness
 import org.jls.makeitrun.workout.model.RepeatBlock
 import org.jls.makeitrun.workout.model.StepDuration
 import org.jls.makeitrun.workout.model.StepType
@@ -39,6 +40,7 @@ data class StepDraft(
     val targetSpeedKmh: Double,
     val heartRateMinBpm: Int,
     val heartRateMaxBpm: Int,
+    val regulationResponsiveness: RegulationResponsiveness?,
     val inclinationPercent: Double?,
 ) {
 
@@ -58,6 +60,8 @@ data class StepDraft(
         } else {
             null
         },
+        regulationResponsiveness = regulationResponsiveness
+            .takeIf { targetMode == StepTargetMode.HEART_RATE },
     )
 
     companion object {
@@ -83,6 +87,7 @@ data class StepDraft(
                 targetSpeedKmh = step.targetSpeedKmh ?: DEFAULT_SPEED_KMH,
                 heartRateMinBpm = step.heartRateTarget?.minBpm ?: DEFAULT_MIN_BPM,
                 heartRateMaxBpm = step.heartRateTarget?.maxBpm ?: DEFAULT_MAX_BPM,
+                regulationResponsiveness = step.regulationResponsiveness,
                 inclinationPercent = step.inclinationPercent,
             )
         }
@@ -100,6 +105,7 @@ data class StepDraft(
             targetSpeedKmh = DEFAULT_SPEED_KMH,
             heartRateMinBpm = DEFAULT_MIN_BPM,
             heartRateMaxBpm = DEFAULT_MAX_BPM,
+            regulationResponsiveness = null,
             inclinationPercent = null,
         )
 

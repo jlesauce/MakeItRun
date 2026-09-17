@@ -60,6 +60,7 @@ data class WorkoutStep(
     val targetSpeedKmh: Double? = null,
     val inclinationPercent: Double? = null,
     val heartRateTarget: HeartRateTarget? = null,
+    val regulationResponsiveness: RegulationResponsiveness? = null,
 ) : WorkoutElement {
 
     val isHeartRateDriven: Boolean

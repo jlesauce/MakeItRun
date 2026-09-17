@@ -44,7 +44,7 @@
     <string name="workouts_section">Mes entraînements :</string>
     <string name="workouts_empty">Aucun entraînement pour l\'instant. Touchez « + » pour en créer un.</string>
     <string name="workouts_locked_title">Tapis pas encore connu</string>
-    <string name="workouts_locked">Connectez votre tapis une première fois pour pouvoir créer un entraînement : Make It Run a besoin de connaître ses vitesses et ses réglages.</string>
+    <string name="workouts_locked">Connectez votre tapis une première fois pour lancer ou créer un entraînement : Make It Run a besoin de connaître ses vitesses et ses réglages.</string>
     <string name="workouts_create">Créer un entraînement</string>
     <string name="workout_summary_line">%1$s · %2$s</string>
     <string name="step_target_with_inclination">%1$s · %2$s</string>
@@ -59,8 +59,6 @@
     <string name="workout_detail_delete">Supprimer</string>
     <string name="workout_detail_needs_connection">Connectez le tapis pour lancer cet entraînement.</string>
     <string name="workout_detail_needs_heart_rate">Cet entraînement comporte des consignes de fréquence cardiaque. Connectez votre capteur pour le lancer.</string>
-    <string name="workout_detail_estimate_partial">Estimation partielle : certaines étapes n\'ont pas d\'allure cible.</string>
-
     <string name="editor_title_new">Nouvel entraînement</string>
     <string name="editor_title_edit">Modifier l\'entraînement</string>
     <string name="editor_name">Nom de l\'entraînement</string>
@@ -82,17 +80,23 @@
     <string name="editor_metres">Mètres</string>
     <string name="editor_target_title_pace">Allure cible</string>
     <string name="editor_target_title_speed">Vitesse cible</string>
-    <string name="editor_target_hint">Allure que Make It Run imposera au tapis pendant cette étape. « Libre » laisse le tapis à la vitesse du moment, sans lui envoyer de consigne.</string>
     <string name="editor_target_fixed">Imposée</string>
     <string name="editor_target_heart_rate">Fréquence cardiaque</string>
     <string name="editor_target_free">Libre</string>
     <string name="editor_heart_rate_zone">%1$d – %2$d bpm</string>
     <string name="editor_heart_rate_hint">Make It Run ajuste la vitesse tout seul pour te maintenir dans cette zone. Il corrige lentement et par petits pas, parce que le cœur met jusqu\'à une minute à répondre à un changement d\'allure. Un capteur de fréquence cardiaque devra être connecté pour lancer cet entraînement.</string>
-    <string name="editor_heart_rate_bounds">Il restera entre %1$s et %2$s km/h, les vitesses qu\'accepte ton tapis.</string>
+    <string name="editor_heart_rate_manual">Saisir la zone</string>
+    <string name="editor_heart_rate_min">Mini (bpm)</string>
+    <string name="editor_heart_rate_max">Maxi (bpm)</string>
+    <string name="editor_heart_rate_range_bounds">De %1$d à %2$d bpm, avec au moins %3$d bpm d\'écart.</string>
+    <string name="editor_regulation">Correction de la vitesse</string>
+    <string name="editor_regulation_default">Celle des paramètres</string>
+    <string name="editor_regulation_hint">Par défaut, l\'étape suit le choix fait dans les paramètres. Une correction douce tient les longs paliers bien stables ; une correction réactive rejoint la zone plus vite, au prix d\'une allure qui bouge davantage.</string>
     <string name="editor_unit_pace">Allure (min/km)</string>
     <string name="editor_unit_speed">Vitesse (km/h)</string>
-    <string name="editor_inclination">Inclinaison (%%)</string>
+    <string name="editor_inclination">Inclinaison (%)</string>
     <string name="editor_speed_bounds">Votre tapis accepte de %1$s à %2$s km/h.</string>
+    <string name="editor_pace_bounds">Votre tapis accepte de %1$s à %2$s min/km.</string>
     <string name="editor_target_manual_pace">Saisir l\'allure</string>
     <string name="editor_target_manual_speed">Saisir la vitesse</string>
     <string name="editor_target_manual_hint">Touchez la valeur pour la saisir au clavier.</string>
@@ -117,13 +121,14 @@
     <string name="session_total">Total : %1$s · %2$s</string>
     <string name="session_pause">Pause</string>
     <string name="session_resume">Reprendre</string>
+    <string name="session_skip_step">Étape suivante</string>
     <string name="session_stop">Arrêt</string>
     <string name="session_finished">Séance terminée</string>
     <string name="session_finished_summary">%1$s parcourus en %2$s</string>
     <string name="session_close">Fermer</string>
     <string name="session_free_pace">Allure libre</string>
     <string name="session_heart_rate_target">Cible %1$d – %2$d bpm</string>
-    <string name="session_heart_rate_smoothed">Lissée pour la régulation : %1$d bpm</string>
+    <string name="session_heart_rate_smoothed">(%1$d)</string>
     <string name="session_heart_rate_in_zone">Dans la zone</string>
     <string name="session_heart_rate_below_zone">Sous la zone</string>
     <string name="session_heart_rate_above_zone">Au-dessus de la zone</string>
@@ -137,8 +142,8 @@
     <string name="session_channel_name">Séance en cours</string>
     <string name="session_preparing">Préparation de la séance…</string>
     <string name="session_countdown_notification">Départ dans %1$d s</string>
-    <string name="session_running_notification">Étape %1$d sur %2$d</string>
-    <string name="session_paused_notification">Séance en pause</string>
+    <string name="session_running_notification">Étape %1$d/%2$d · %3$s · il reste %4$s</string>
+    <string name="session_paused_notification">En pause · étape %1$d/%2$d</string>
 
     <string name="metrics_title">Mesures en direct</string>
     <string name="metric_speed">Vitesse</string>

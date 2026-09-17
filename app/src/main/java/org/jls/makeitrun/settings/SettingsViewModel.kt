@@ -12,7 +12,7 @@ import kotlinx.coroutines.launch
 import org.jls.makeitrun.data.BackupRepository
 import org.jls.makeitrun.data.HeartRateSensorRepository
 import org.jls.makeitrun.data.PendingImport
-import org.jls.makeitrun.session.RegulationResponsiveness
+import org.jls.makeitrun.workout.model.RegulationResponsiveness
 import timber.log.Timber
 import javax.inject.Inject
 

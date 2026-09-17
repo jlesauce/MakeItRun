@@ -18,7 +18,7 @@ data class WorkoutSummary(
 ) {
 
     val hasDistance: Boolean
-        get() = distanceMeters > 0
+        get() = isComplete && distanceMeters > 0
 }
 
 object WorkoutPlan {

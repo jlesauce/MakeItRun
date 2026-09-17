@@ -48,7 +48,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.jls.makeitrun.R
 import org.jls.makeitrun.data.TreadmillConflict
-import org.jls.makeitrun.session.RegulationResponsiveness
+import org.jls.makeitrun.workout.WorkoutStepLabels
+import org.jls.makeitrun.workout.model.RegulationResponsiveness
 import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -211,7 +212,7 @@ private fun RegulationCard(
         Column(Modifier.selectableGroup()) {
             RegulationResponsiveness.entries.forEach { candidate ->
                 RadioRow(
-                    label = stringResource(candidate.labelResId()),
+                    label = WorkoutStepLabels.regulationName(candidate),
                     supporting = stringResource(
                         R.string.settings_regulation_option,
                         "%.1f".format(candidate.speedStepKmh),
@@ -223,12 +224,6 @@ private fun RegulationCard(
             }
         }
     }
-}
-
-private fun RegulationResponsiveness.labelResId(): Int = when (this) {
-    RegulationResponsiveness.GENTLE -> R.string.settings_regulation_gentle
-    RegulationResponsiveness.NORMAL -> R.string.settings_regulation_normal
-    RegulationResponsiveness.BRISK -> R.string.settings_regulation_brisk
 }
 
 @Composable

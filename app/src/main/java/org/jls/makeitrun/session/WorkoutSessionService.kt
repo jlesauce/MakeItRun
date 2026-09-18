@@ -17,12 +17,15 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 import org.jls.makeitrun.MainActivity
 import org.jls.makeitrun.R
 import org.jls.makeitrun.di.ApplicationScope
 import org.jls.makeitrun.ftms.FtmsTreadmillClient
 import org.jls.makeitrun.workout.WorkoutStepLabels
 import org.jls.makeitrun.workout.model.Formats
+import timber.log.Timber
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -71,7 +74,10 @@ class WorkoutSessionService : Service() {
     }
 
     override fun onTaskRemoved(rootIntent: Intent?) {
-        engine.stop()
+        runBlocking {
+            withTimeoutOrNull(TREADMILL_STOP_TIMEOUT_MILLIS) { engine.stopAndAwaitTreadmill() }
+                ?: Timber.w("Tapis non arrete avant la fermeture de l'application")
+        }
         client.disconnect()
         stopWithoutNotification()
         super.onTaskRemoved(rootIntent)
@@ -107,11 +113,15 @@ class WorkoutSessionService : Service() {
             progress.remaining.toText(),
         )
 
-        is SessionState.Paused -> getString(
-            R.string.session_paused_notification,
-            progress.stepIndex + 1,
-            progress.stepCount,
-        )
+        is SessionState.Paused -> if (isTreadmillStopped) {
+            getString(R.string.session_treadmill_stopped)
+        } else {
+            getString(
+                R.string.session_paused_notification,
+                progress.stepIndex + 1,
+                progress.stepCount,
+            )
+        }
 
         else -> getString(R.string.session_preparing)
     }
@@ -165,6 +175,7 @@ class WorkoutSessionService : Service() {
     companion object {
         private const val CHANNEL_ID = "workout_session"
         private const val NOTIFICATION_ID = 1
+        private const val TREADMILL_STOP_TIMEOUT_MILLIS = 3_000L
 
         fun start(context: Context) {
             context.startForegroundService(Intent(context, WorkoutSessionService::class.java))

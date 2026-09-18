@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -15,6 +16,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -25,6 +28,8 @@ import androidx.navigation.compose.rememberNavController
 import org.jls.makeitrun.R
 import org.jls.makeitrun.about.AboutScreen
 import org.jls.makeitrun.debug.DebugScreen
+import org.jls.makeitrun.history.detail.SessionReportScreen
+import org.jls.makeitrun.history.list.HistoryListScreen
 import org.jls.makeitrun.session.SessionScreen
 import org.jls.makeitrun.settings.SettingsScreen
 import org.jls.makeitrun.workout.detail.WorkoutDetailScreen
@@ -33,16 +38,23 @@ import org.jls.makeitrun.workout.list.WorkoutListScreen
 
 private object Routes {
     const val WORKOUTS = "workouts"
+    const val HISTORY = "history"
     const val DEBUG = "debug"
     const val WORKOUT_DETAIL = "workout/{workoutId}"
     const val EDITOR = "editor/{workoutId}"
     const val SESSION = "session/{workoutId}"
+    const val SESSION_RESUME = "session/resume/{sessionId}"
+    const val SESSION_REPORT = "history/{sessionId}"
     const val SETTINGS = "settings"
     const val ABOUT = "about"
+
+    val SESSION_ROUTES = setOf(SESSION, SESSION_RESUME)
 
     fun workoutDetail(id: Long) = "workout/$id"
     fun editor(id: Long) = "editor/$id"
     fun session(id: Long) = "session/$id"
+    fun resumeSession(id: Long) = "session/resume/$id"
+    fun sessionReport(id: Long) = "history/$id"
 
     const val NEW_WORKOUT = 0L
 }
@@ -53,20 +65,24 @@ private enum class Tab(
     val icon: ImageVector,
 ) {
     WORKOUTS(Routes.WORKOUTS, R.string.tab_workouts, Icons.AutoMirrored.Filled.List),
+    HISTORY(Routes.HISTORY, R.string.tab_history, Icons.Default.History),
     DEBUG(Routes.DEBUG, R.string.tab_debug, Icons.Default.Build),
 }
 
 @Composable
-fun MakeItRunApp(sessionToResume: Long? = null) {
+fun MakeItRunApp(runningSessionViewModel: RunningSessionViewModel = hiltViewModel()) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
+    val runningWorkoutId by runningSessionViewModel.runningWorkoutId
+        .collectAsStateWithLifecycle()
 
     val openSettings = { navController.navigate(Routes.SETTINGS) }
     val openAbout = { navController.navigate(Routes.ABOUT) }
 
-    LaunchedEffect(Unit) {
-        val workoutId = sessionToResume ?: return@LaunchedEffect
+    LaunchedEffect(runningWorkoutId, currentRoute) {
+        val workoutId = runningWorkoutId ?: return@LaunchedEffect
+        if (currentRoute == null || currentRoute in Routes.SESSION_ROUTES) return@LaunchedEffect
         navController.navigate(Routes.session(workoutId)) {
             popUpTo(Routes.WORKOUTS)
             launchSingleTop = true
@@ -95,6 +111,27 @@ fun MakeItRunApp(sessionToResume: Long? = null) {
                     onOpenWorkout = { id -> navController.navigate(Routes.workoutDetail(id)) },
                     onOpenSettings = openSettings,
                     onOpenAbout = openAbout,
+                )
+            }
+
+            composable(Routes.HISTORY) {
+                HistoryListScreen(
+                    contentPadding = innerPadding,
+                    onOpenSession = { id -> navController.navigate(Routes.sessionReport(id)) },
+                    onResumeSession = { id ->
+                        navController.navigate(Routes.resumeSession(id)) {
+                            popUpTo(Routes.HISTORY)
+                        }
+                    },
+                    onOpenSettings = openSettings,
+                    onOpenAbout = openAbout,
+                )
+            }
+
+            composable(Routes.SESSION_REPORT) { entry ->
+                SessionReportScreen(
+                    sessionId = entry.sessionId(),
+                    onBack = navController::popBackStack,
                 )
             }
 
@@ -137,8 +174,16 @@ fun MakeItRunApp(sessionToResume: Long? = null) {
             composable(Routes.SESSION) { entry ->
                 SessionScreen(
                     contentPadding = innerPadding,
-                    workoutId = entry.workoutId(),
                     onFinished = navController::popBackStack,
+                    workoutId = entry.workoutId(),
+                )
+            }
+
+            composable(Routes.SESSION_RESUME) { entry ->
+                SessionScreen(
+                    contentPadding = innerPadding,
+                    onFinished = navController::popBackStack,
+                    resumeSessionId = entry.sessionId(),
                 )
             }
         }
@@ -172,3 +217,6 @@ private fun BottomBar(navController: NavHostController, currentRoute: String?) {
 
 private fun androidx.navigation.NavBackStackEntry.workoutId(): Long =
     arguments?.getString("workoutId")?.toLongOrNull() ?: Routes.NEW_WORKOUT
+
+private fun androidx.navigation.NavBackStackEntry.sessionId(): Long =
+    arguments?.getString("sessionId")?.toLongOrNull() ?: 0L

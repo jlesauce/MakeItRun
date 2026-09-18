@@ -27,7 +27,10 @@ sealed interface SessionState {
 
     data class Running(val progress: SessionProgress) : SessionState
 
-    data class Paused(val progress: SessionProgress) : SessionState
+    data class Paused(
+        val progress: SessionProgress,
+        val isTreadmillStopped: Boolean = false,
+    ) : SessionState
 
     data class Finished(
         val workoutName: String,

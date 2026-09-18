@@ -1,6 +1,7 @@
 <resources>
 
     <string name="tab_workouts">Entraînements</string>
+    <string name="tab_history">Historique</string>
     <string name="tab_debug">Debug</string>
 
     <string name="menu_more">Plus d\'options</string>
@@ -68,6 +69,7 @@
     <string name="editor_empty">Ajoutez une première étape pour commencer.</string>
     <string name="editor_repetitions">Répétitions</string>
     <string name="editor_add_step_to_block">Ajouter une étape au bloc</string>
+    <string name="editor_skip_last_step">Ignorer la dernière étape de la dernière répétition</string>
     <string name="editor_move_up">Monter</string>
     <string name="editor_move_down">Descendre</string>
     <string name="editor_delete">Supprimer</string>
@@ -121,6 +123,12 @@
     <string name="session_total">Total : %1$s · %2$s</string>
     <string name="session_pause">Pause</string>
     <string name="session_resume">Reprendre</string>
+    <string name="session_treadmill_stopped">Tapis arrêté · relancez la courroie pour reprendre</string>
+    <string name="history_resume">Reprendre où j\'en étais</string>
+    <string name="session_leave_title">Arrêter l\'activité ?</string>
+    <string name="session_leave_message">L\'activité en cours sera interrompue et le tapis arrêté. Tant qu\'elle n\'est pas terminée, les autres écrans restent inaccessibles.</string>
+    <string name="session_leave_stop">Arrêter l\'activité</string>
+    <string name="session_leave_continue">Continuer la séance</string>
     <string name="session_skip_step">Étape suivante</string>
     <string name="session_stop">Arrêt</string>
     <string name="session_finished">Séance terminée</string>
@@ -211,6 +219,43 @@
     <string name="backup_treadmill_use_backup">Prendre celui de la sauvegarde</string>
     <string name="backup_export_failed">Les entraînements n\'ont pas pu être enregistrés.</string>
     <string name="backup_import_failed">Ce fichier n\'est pas une sauvegarde Make It Run.</string>
+
+    <string name="history_section">Mes séances :</string>
+    <string name="history_empty">Aucune séance enregistrée pour l\'instant. Dès que vous aurez couru un entraînement, il apparaîtra ici.</string>
+    <string name="history_metrics">%1$s · %2$s</string>
+    <string name="history_average_heart_rate">%1$d bpm en moyenne</string>
+    <string name="history_outcome_stopped">Arrêtée en cours</string>
+    <string name="history_outcome_failed">Interrompue</string>
+    <string name="history_steps_done">%1$d étapes sur %2$d</string>
+    <string name="history_zone_share">%1$d %% dans la zone</string>
+
+    <string name="session_report_title">Séance</string>
+    <string name="session_report_not_found">Cette séance n\'est plus disponible.</string>
+    <string name="session_report_delete">Supprimer cette séance</string>
+    <string name="session_report_delete_title">Supprimer cette séance ?</string>
+    <string name="session_report_delete_message">Son résumé et tous les relevés pris pendant l\'entraînement seront perdus.</string>
+    <string name="session_report_delete_confirm">Supprimer</string>
+    <string name="session_report_delete_cancel">Annuler</string>
+    <string name="session_report_failure">Interrompue : %1$s</string>
+    <string name="session_report_duration">Durée</string>
+    <string name="session_report_distance">Distance</string>
+    <string name="session_report_average_heart_rate">Fréquence cardiaque moyenne</string>
+    <string name="session_report_maximum_heart_rate">Fréquence cardiaque maximale</string>
+    <string name="session_report_time_in_zone">Temps dans la zone</string>
+    <string name="session_report_energy">Énergie</string>
+    <string name="session_report_energy_value">%1$d kcal</string>
+    <string name="session_report_chart">Vitesse et fréquence cardiaque</string>
+    <string name="session_report_chart_empty">Aucun relevé n\'a été enregistré pendant cette séance.</string>
+    <string name="session_report_chart_speed">Vitesse</string>
+    <string name="session_report_chart_heart_rate">Fréquence cardiaque</string>
+    <string name="session_report_steps">Étape par étape</string>
+    <string name="session_report_step_planned">Prévu : %1$s</string>
+    <string name="session_report_step_actual">Réalisé : %1$s</string>
+    <string name="session_report_step_heart_rate">%1$d bpm en moyenne, pointe à %2$d</string>
+    <string name="session_report_treadmill">Compteurs du tapis</string>
+    <string name="session_report_treadmill_hint">Ce que le tapis affichait sur son propre écran à la fin de la séance. À comparer avec votre montre pour juger de la justesse de sa mesure de distance.</string>
+    <string name="session_report_treadmill_distance">Distance affichée : %1$s</string>
+    <string name="session_report_treadmill_time">Temps affiché : %1$s</string>
 
     <string name="about_title">À propos</string>
     <string name="about_version">Version %1$s</string>

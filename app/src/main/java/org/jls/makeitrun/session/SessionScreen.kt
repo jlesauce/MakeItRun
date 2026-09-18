@@ -1,5 +1,6 @@
 package org.jls.makeitrun.session
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -10,17 +11,26 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -38,14 +48,40 @@ import org.jls.makeitrun.workout.model.HeartRateTarget
 @Composable
 fun SessionScreen(
     contentPadding: PaddingValues,
-    workoutId: Long,
     onFinished: () -> Unit,
+    workoutId: Long? = null,
+    resumeSessionId: Long? = null,
     viewModel: SessionViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val showPace by viewModel.showPace.collectAsStateWithLifecycle()
+    val heartRate by viewModel.heartRate.collectAsStateWithLifecycle()
 
-    LaunchedEffect(workoutId) { viewModel.startIfIdle(workoutId) }
+    var startAlreadyRequested by rememberSaveable(workoutId, resumeSessionId) {
+        mutableStateOf(false)
+    }
+    LaunchedEffect(workoutId, resumeSessionId) {
+        if (startAlreadyRequested) return@LaunchedEffect
+        startAlreadyRequested = true
+        when {
+            resumeSessionId != null -> viewModel.resumeIfIdle(resumeSessionId)
+            workoutId != null -> viewModel.startIfIdle(workoutId)
+        }
+    }
+
+    var askBeforeLeaving by rememberSaveable { mutableStateOf(false) }
+    BackHandler(enabled = state.isActive) { askBeforeLeaving = true }
+
+    if (askBeforeLeaving) {
+        StopSessionDialog(
+            onDismiss = { askBeforeLeaving = false },
+            onStop = {
+                askBeforeLeaving = false
+                viewModel.stop()
+                onFinished()
+            },
+        )
+    }
 
     val view = LocalView.current
     DisposableEffect(Unit) {
@@ -67,7 +103,9 @@ fun SessionScreen(
             is SessionState.Running -> RunningSession(
                 progress = current.progress,
                 showPace = showPace,
+                heartRate = heartRate,
                 isPaused = false,
+                isTreadmillStopped = false,
                 onPause = viewModel::pause,
                 onResume = viewModel::resume,
                 onSkip = viewModel::skipStep,
@@ -80,7 +118,9 @@ fun SessionScreen(
             is SessionState.Paused -> RunningSession(
                 progress = current.progress,
                 showPace = showPace,
+                heartRate = heartRate,
                 isPaused = true,
+                isTreadmillStopped = current.isTreadmillStopped,
                 onPause = viewModel::pause,
                 onResume = viewModel::resume,
                 onSkip = viewModel::skipStep,
@@ -118,6 +158,28 @@ fun SessionScreen(
 }
 
 @Composable
+private fun StopSessionDialog(onDismiss: () -> Unit, onStop: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.session_leave_title)) },
+        text = { Text(stringResource(R.string.session_leave_message)) },
+        confirmButton = {
+            TextButton(onClick = onStop) {
+                Text(
+                    text = stringResource(R.string.session_leave_stop),
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.session_leave_continue))
+            }
+        },
+    )
+}
+
+@Composable
 private fun Countdown(seconds: Int) {
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -136,12 +198,23 @@ private fun Countdown(seconds: Int) {
 private fun ColumnScope.RunningSession(
     progress: SessionProgress,
     showPace: Boolean,
+    heartRate: SessionHeartRate,
     isPaused: Boolean,
+    isTreadmillStopped: Boolean,
     onPause: () -> Unit,
     onResume: () -> Unit,
     onSkip: () -> Unit,
     onStop: () -> Unit,
 ) {
+    if (isTreadmillStopped) {
+        Text(
+            text = stringResource(R.string.session_treadmill_stopped),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.error,
+            textAlign = TextAlign.Center,
+        )
+    }
+
     Text(
         text = stringResource(
             R.string.session_step_progress,
@@ -167,13 +240,22 @@ private fun ColumnScope.RunningSession(
         )
     }
 
-    Text(
-        text = when (val remaining = progress.remaining) {
-            is StepRemaining.Seconds -> Formats.duration(remaining.value)
-            is StepRemaining.Meters -> Formats.distance(remaining.value)
-        },
-        style = MaterialTheme.typography.displayMedium,
-    )
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(20.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = when (val remaining = progress.remaining) {
+                is StepRemaining.Seconds -> Formats.duration(remaining.value)
+                is StepRemaining.Meters -> Formats.distance(remaining.value)
+            },
+            style = MaterialTheme.typography.displayMedium,
+        )
+
+        if (heartRate.isSensorLinked && progress.currentStep.step.heartRateTarget == null) {
+            HeartRateReading(heartRate.beatsPerMinute)
+        }
+    }
 
     Text(
         text = stringResource(
@@ -243,6 +325,7 @@ private fun ColumnScope.RunningSession(
         ) {
             OutlinedButton(
                 onClick = if (isPaused) onResume else onPause,
+                enabled = !isTreadmillStopped,
                 modifier = Modifier.weight(1f),
             ) {
                 Text(
@@ -253,7 +336,7 @@ private fun ColumnScope.RunningSession(
             }
             OutlinedButton(
                 onClick = onSkip,
-                enabled = !isPaused && progress.nextStep != null,
+                enabled = !isPaused && !isTreadmillStopped && progress.nextStep != null,
                 modifier = Modifier.weight(1f),
             ) {
                 Text(
@@ -276,6 +359,27 @@ private fun ColumnScope.RunningSession(
                 style = MaterialTheme.typography.headlineMedium,
             )
         }
+    }
+}
+
+@Composable
+private fun HeartRateReading(beatsPerMinute: Int?) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = Icons.Default.Favorite,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.error,
+            modifier = Modifier.size(28.dp),
+        )
+        Text(
+            text = beatsPerMinute
+                ?.let { stringResource(R.string.heart_rate_bpm, it) }
+                ?: stringResource(R.string.value_unavailable),
+            style = MaterialTheme.typography.displaySmall,
+        )
     }
 }
 

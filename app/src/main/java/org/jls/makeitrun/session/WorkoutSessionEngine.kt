@@ -5,14 +5,20 @@ import android.os.SystemClock
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.jls.makeitrun.data.SessionHistoryRepository
+import org.jls.makeitrun.data.SessionRecorder
 import org.jls.makeitrun.di.ApplicationScope
 import org.jls.makeitrun.ftms.FtmsTreadmillClient
 import org.jls.makeitrun.ftms.TreadmillCapabilities
 import org.jls.makeitrun.heartrate.HeartRateClient
+import org.jls.makeitrun.history.model.SessionOutcome
+import org.jls.makeitrun.history.model.SessionResumePoint
 import org.jls.makeitrun.workout.model.RegulationResponsiveness
 import org.jls.makeitrun.workout.model.ResolvedStep
 import org.jls.makeitrun.workout.model.Workout
@@ -22,12 +28,19 @@ import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.abs
+import kotlin.math.min
+
+private data class StepOffsets(
+    val elapsedSeconds: Int = 0,
+    val distanceMeters: Int = 0,
+)
 
 @SuppressLint("MissingPermission")
 @Singleton
 class WorkoutSessionEngine @Inject constructor(
     private val client: FtmsTreadmillClient,
     private val heartRateClient: HeartRateClient,
+    private val history: SessionHistoryRepository,
     @param:ApplicationScope private val scope: CoroutineScope,
 ) {
 
@@ -41,6 +54,12 @@ class WorkoutSessionEngine @Inject constructor(
 
     private var startedWorkoutId: Long? = null
 
+    private var beltHasMoved = false
+    private var beltStoppedSinceMillis: Long? = null
+    private var lowestSpeedSincePauseKmh: Double? = null
+    private var beltRestartedSinceMillis: Long? = null
+    private var pausedByTreadmill = false
+
     val runningWorkoutId: Long?
         get() = startedWorkoutId.takeIf { _state.value.isActive }
 
@@ -48,6 +67,7 @@ class WorkoutSessionEngine @Inject constructor(
         workout: Workout,
         capabilities: TreadmillCapabilities?,
         responsiveness: RegulationResponsiveness = RegulationResponsiveness.DEFAULT,
+        resumeFrom: SessionResumePoint? = null,
     ) {
         if (_state.value.isActive) {
             Timber.w("Une seance est deja en cours, demarrage ignore")
@@ -57,8 +77,20 @@ class WorkoutSessionEngine @Inject constructor(
         speedGuardJob?.cancel()
         pauseRequested.value = false
         skipRequested.value = false
+        beltHasMoved = false
+        beltStoppedSinceMillis = null
+        lowestSpeedSincePauseKmh = null
+        beltRestartedSinceMillis = null
+        pausedByTreadmill = false
         startedWorkoutId = workout.id
-        sessionJob = scope.launch { runSession(workout, capabilities, responsiveness) }
+        sessionJob = scope.launch {
+            runSession(workout, capabilities, responsiveness, resumeFrom)
+        }
+    }
+
+    fun reportFailure(reason: String) {
+        if (_state.value.isActive) return
+        _state.value = SessionState.Failed(reason)
     }
 
     fun pause() {
@@ -66,6 +98,7 @@ class WorkoutSessionEngine @Inject constructor(
     }
 
     fun resume() {
+        pausedByTreadmill = false
         pauseRequested.value = false
     }
 
@@ -74,12 +107,22 @@ class WorkoutSessionEngine @Inject constructor(
     }
 
     fun stop() {
+        cancelSession()
+        scope.launch { runCatching { client.stop() } }
+    }
+
+    suspend fun stopAndAwaitTreadmill() {
+        cancelSession()
+        runCatching { client.stop() }
+    }
+
+    private fun cancelSession() {
         sessionJob?.cancel()
         sessionJob = null
         speedGuardJob?.cancel()
         speedGuardJob = null
         pauseRequested.value = false
-        scope.launch { runCatching { client.stop() } }
+        pausedByTreadmill = false
         _state.value = SessionState.Idle
     }
 
@@ -91,6 +134,7 @@ class WorkoutSessionEngine @Inject constructor(
         workout: Workout,
         capabilities: TreadmillCapabilities?,
         responsiveness: RegulationResponsiveness,
+        resumeFrom: SessionResumePoint?,
     ) {
         val steps = WorkoutPlan.flatten(workout.elements)
         if (steps.isEmpty()) {
@@ -98,47 +142,77 @@ class WorkoutSessionEngine @Inject constructor(
             return
         }
 
-        try {
-            countDown()
+        var recorder: SessionRecorder? = null
+        var outcome = SessionOutcome.STOPPED
+        var failureReason: String? = null
 
+        try {
             val control = client.requestControl()
             if (control?.isSuccess != true) {
-                _state.value = SessionState.Failed(
-                    "Le tapis a refuse la prise de controle. Verifiez qu'aucune autre " +
-                        "application n'y est connectee."
+                throw IllegalStateException(
+                    "Le tapis n'a pas accepte la prise de controle. Verifiez qu'il est allume, " +
+                        "qu'aucune autre application n'y est connectee, puis relancez la " +
+                        "connexion depuis l'ecran d'accueil."
                 )
-                return
+            }
+
+            countDown()
+            recorder = if (resumeFrom == null) {
+                history.startRecording(workout, steps.size)
+            } else {
+                history.resumeRecording(resumeFrom)
             }
             client.start()
 
             val sessionDistanceOrigin = currentTreadmillDistance()
-            var completedStepsSeconds = 0
+            val sessionDistanceOffset = resumeFrom?.distanceMeters ?: 0
+            val firstStepIndex = resumeFrom?.stepIndex ?: 0
+            var completedStepsSeconds = resumeFrom?.completedStepsSeconds ?: 0
 
-            steps.forEachIndexed { index, resolved ->
-                applyStep(resolved.step, capabilities)
+            for (index in firstStepIndex until steps.size) {
+                applyStep(steps[index].step, capabilities)
                 completedStepsSeconds += runStep(
                     workout = workout,
                     steps = steps,
                     index = index,
                     completedStepsSeconds = completedStepsSeconds,
                     sessionDistanceOrigin = sessionDistanceOrigin,
+                    sessionDistanceOffset = sessionDistanceOffset,
+                    stepOffsets = if (index == firstStepIndex) {
+                        StepOffsets(
+                            elapsedSeconds = resumeFrom?.stepElapsedSeconds ?: 0,
+                            distanceMeters = resumeFrom?.stepDistanceMeters ?: 0,
+                        )
+                    } else {
+                        StepOffsets()
+                    },
                     capabilities = capabilities,
                     responsiveness = responsiveness,
+                    recorder = recorder,
                 )
             }
 
             client.stop()
+            outcome = SessionOutcome.COMPLETED
             _state.value = SessionState.Finished(
                 workoutName = workout.name,
                 totalElapsedSeconds = completedStepsSeconds,
-                totalDistanceMeters = currentTreadmillDistance() - sessionDistanceOrigin,
+                totalDistanceMeters = sessionDistanceOffset +
+                    (currentTreadmillDistance() - sessionDistanceOrigin).coerceAtLeast(0),
             )
         } catch (cancellation: CancellationException) {
             throw cancellation
-        } catch (error: Exception) {
-            Timber.e(error, "Seance interrompue")
+        } catch (failure: Exception) {
+            Timber.e(failure, "Seance interrompue")
             runCatching { client.stop() }
-            _state.value = SessionState.Failed(error.message ?: "Erreur pendant la seance")
+            outcome = SessionOutcome.FAILED
+            failureReason = failure.message ?: "Erreur pendant la seance"
+            _state.value = SessionState.Failed(failureReason)
+        } finally {
+            withContext(NonCancellable) {
+                runCatching { recorder?.finish(outcome, failureReason) }
+                    .onFailure { Timber.e(it, "Seance non enregistree dans l'historique") }
+            }
         }
     }
 
@@ -155,8 +229,11 @@ class WorkoutSessionEngine @Inject constructor(
         index: Int,
         completedStepsSeconds: Int,
         sessionDistanceOrigin: Int,
+        sessionDistanceOffset: Int,
+        stepOffsets: StepOffsets,
         capabilities: TreadmillCapabilities?,
         responsiveness: RegulationResponsiveness,
+        recorder: SessionRecorder?,
     ): Int {
         val resolved = steps[index]
         val stepDistanceOrigin = currentTreadmillDistance()
@@ -164,6 +241,7 @@ class WorkoutSessionEngine @Inject constructor(
         skipRequested.value = false
         var pausedMillis = 0L
         var pauseStartedAt: Long? = null
+        var pauseCommandSent = false
 
         val regulator = startRegulation(resolved.step, capabilities, responsiveness)
         var regulation: RegulationOutcome? = null
@@ -172,22 +250,31 @@ class WorkoutSessionEngine @Inject constructor(
             delay(TICK_MILLIS)
 
             val now = SystemClock.elapsedRealtime()
-            if (pauseRequested.value) {
+            followTreadmillMotion(now)
+            val paused = pauseRequested.value
+
+            if (paused) {
                 if (pauseStartedAt == null) {
                     pauseStartedAt = now
-                    runCatching { client.pause() }
+                    if (!pausedByTreadmill) {
+                        pauseCommandSent = true
+                        runCatching { client.pause() }
+                    }
                 }
             } else if (pauseStartedAt != null) {
                 pausedMillis += now - pauseStartedAt
                 pauseStartedAt = null
-                runCatching { client.start() }
+                if (pauseCommandSent && !isBeltMoving()) runCatching { client.start() }
+                pauseCommandSent = false
             }
 
             val pausedSoFar = pausedMillis + (pauseStartedAt?.let { now - it } ?: 0L)
-            val elapsedSeconds = ((now - stepStartedAt - pausedSoFar) / 1_000).toInt()
-            val coveredMeters = (currentTreadmillDistance() - stepDistanceOrigin).coerceAtLeast(0)
+            val elapsedSeconds = stepOffsets.elapsedSeconds +
+                ((now - stepStartedAt - pausedSoFar) / 1_000).toInt()
+            val coveredMeters = stepOffsets.distanceMeters +
+                (currentTreadmillDistance() - stepDistanceOrigin).coerceAtLeast(0)
 
-            if (regulator != null && !pauseRequested.value) {
+            if (regulator != null && !paused) {
                 regulation = regulator.update(now, heartRateClient.sample.value)
                     .also { applyRegulation(it) }
             }
@@ -203,16 +290,20 @@ class WorkoutSessionEngine @Inject constructor(
                 remaining = StepProgress.remaining(resolved.step, elapsedSeconds, coveredMeters),
                 stepFraction = StepProgress.fraction(resolved.step, elapsedSeconds, coveredMeters),
                 totalElapsedSeconds = completedStepsSeconds + elapsedSeconds,
-                totalDistanceMeters =
+                totalDistanceMeters = sessionDistanceOffset +
                     (currentTreadmillDistance() - sessionDistanceOrigin).coerceAtLeast(0),
                 liveData = client.treadmillData.value,
                 regulation = regulation,
             )
 
-            _state.value = if (pauseRequested.value) {
-                SessionState.Paused(progress)
+            _state.value = if (paused) {
+                SessionState.Paused(progress, isTreadmillStopped = pausedByTreadmill)
             } else {
                 SessionState.Running(progress)
+            }
+
+            if (!paused) {
+                recorder?.onTick(now, progress, heartRateClient.sample.value)
             }
 
             if (skipRequested.compareAndSet(expect = true, update = false)) {
@@ -220,7 +311,7 @@ class WorkoutSessionEngine @Inject constructor(
                 return elapsedSeconds
             }
 
-            if (!pauseRequested.value &&
+            if (!paused &&
                 StepProgress.isComplete(resolved.step, elapsedSeconds, coveredMeters)
             ) {
                 return elapsedSeconds
@@ -302,6 +393,57 @@ class WorkoutSessionEngine @Inject constructor(
         }
     }
 
+    private fun followTreadmillMotion(now: Long) {
+        val speedKmh = client.treadmillData.value?.instantaneousSpeedKmh ?: return
+
+        if (pauseRequested.value) {
+            beltHasMoved = false
+            beltStoppedSinceMillis = null
+            if (!hasBeltRestarted(now, speedKmh)) return
+
+            Timber.i("Tapis relance depuis sa console, reprise de la seance")
+            pausedByTreadmill = false
+            pauseRequested.value = false
+            return
+        }
+
+        lowestSpeedSincePauseKmh = null
+        beltRestartedSinceMillis = null
+        if (!hasBeltStopped(now, speedKmh)) return
+
+        Timber.i("Tapis arrete depuis sa console, seance mise en pause")
+        pausedByTreadmill = true
+        pauseRequested.value = true
+    }
+
+    private fun hasBeltStopped(now: Long, speedKmh: Double): Boolean {
+        if (speedKmh > BELT_MOVING_THRESHOLD_KMH) {
+            beltHasMoved = true
+            beltStoppedSinceMillis = null
+            return false
+        }
+        if (!beltHasMoved) return false
+
+        val stoppedSince = beltStoppedSinceMillis ?: now.also { beltStoppedSinceMillis = it }
+        return now - stoppedSince >= BELT_STOP_GRACE_MILLIS
+    }
+
+    private fun hasBeltRestarted(now: Long, speedKmh: Double): Boolean {
+        val lowest = min(speedKmh, lowestSpeedSincePauseKmh ?: speedKmh)
+        lowestSpeedSincePauseKmh = lowest
+
+        if (speedKmh < lowest + BELT_RESTART_MARGIN_KMH) {
+            beltRestartedSinceMillis = null
+            return false
+        }
+
+        val risingSince = beltRestartedSinceMillis ?: now.also { beltRestartedSinceMillis = it }
+        return now - risingSince >= BELT_RESTART_GRACE_MILLIS
+    }
+
+    private fun isBeltMoving(): Boolean =
+        (client.treadmillData.value?.instantaneousSpeedKmh ?: 0.0) > BELT_MOVING_THRESHOLD_KMH
+
     private fun currentTreadmillDistance(): Int =
         client.treadmillData.value?.totalDistanceMeters ?: 0
 
@@ -314,5 +456,10 @@ class WorkoutSessionEngine @Inject constructor(
         const val SPEED_RESEND_DELAY_MILLIS = 4_000L
         const val SPEED_RESEND_ATTEMPTS = 3
         const val SPEED_TOLERANCE_KMH = 0.05
+
+        const val BELT_MOVING_THRESHOLD_KMH = 0.1
+        const val BELT_STOP_GRACE_MILLIS = 3_000L
+        const val BELT_RESTART_MARGIN_KMH = 0.5
+        const val BELT_RESTART_GRACE_MILLIS = 1_500L
     }
 }

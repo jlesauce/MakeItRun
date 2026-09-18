@@ -61,8 +61,13 @@ fun DebugScreen(
         ) {
             item { CapabilitiesCard(capabilities = state.capabilities) }
 
-            state.lastCommandResult?.let { message ->
-                item { Text(text = message, style = MaterialTheme.typography.bodySmall) }
+            state.lastCommandResult?.let { result ->
+                item {
+                    Text(
+                        text = commandResultMessage(result),
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
             }
 
             val connected = state.connected
@@ -108,6 +113,16 @@ fun DebugScreen(
 private fun Dimmed(enabled: Boolean, content: @Composable () -> Unit) {
     Box(modifier = Modifier.alpha(if (enabled) 1f else DISABLED_ALPHA)) {
         content()
+    }
+}
+
+@Composable
+private fun commandResultMessage(result: DebugCommandResult): String {
+    val command = stringResource(result.command.labelResId)
+    return when {
+        !result.answered -> stringResource(R.string.debug_command_no_answer, command)
+        result.refusalReason == null -> stringResource(R.string.debug_command_accepted, command)
+        else -> stringResource(R.string.debug_command_refused, command, result.refusalReason)
     }
 }
 

@@ -1,11 +1,13 @@
 package org.jls.makeitrun
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import dagger.hilt.android.AndroidEntryPoint
 import org.jls.makeitrun.ftms.FtmsTreadmillClient
+import org.jls.makeitrun.heartrate.HeartRateClient
 import org.jls.makeitrun.session.WorkoutSessionEngine
 import org.jls.makeitrun.ui.MakeItRunApp
 import org.jls.makeitrun.ui.PermissionGate
@@ -18,6 +20,9 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var client: FtmsTreadmillClient
+
+    @Inject
+    lateinit var heartRateClient: HeartRateClient
 
     @Inject
     lateinit var engine: WorkoutSessionEngine
@@ -34,11 +39,13 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    @SuppressLint("MissingPermission")
     override fun onDestroy() {
         super.onDestroy()
         if (isFinishing && !engine.state.value.isActive) {
-            Timber.i("Fermeture de l'application, deconnexion du tapis")
+            Timber.i("Fermeture de l'application, deconnexion du tapis et du capteur")
             client.disconnect()
+            heartRateClient.disconnect()
         }
     }
 }

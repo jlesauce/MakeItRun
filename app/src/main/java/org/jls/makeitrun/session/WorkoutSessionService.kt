@@ -1,5 +1,6 @@
 package org.jls.makeitrun.session
 
+import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -73,6 +74,7 @@ class WorkoutSessionService : Service() {
         return START_NOT_STICKY
     }
 
+    @SuppressLint("MissingPermission")
     override fun onTaskRemoved(rootIntent: Intent?) {
         runBlocking {
             withTimeoutOrNull(TREADMILL_STOP_TIMEOUT_MILLIS) { engine.stopAndAwaitTreadmill() }

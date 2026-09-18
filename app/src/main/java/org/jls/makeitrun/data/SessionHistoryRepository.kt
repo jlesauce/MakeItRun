@@ -72,6 +72,7 @@ class SessionHistoryRepository @Inject constructor(
 
     suspend fun findResumePoint(id: Long): SessionResumePoint? {
         val record = dao.findRecord(id) ?: return null
+        if (!SessionResume.isResumableOutcome(SessionOutcome.parse(record.outcome))) return null
         if (!SessionResume.isWithinWindow(record.endedAt, System.currentTimeMillis())) return null
 
         val elements = record.elements()

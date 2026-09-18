@@ -184,16 +184,25 @@ private fun HeaderCard(report: SessionReport) {
             }
 
             summary.averageBpm?.let {
-                MetricLine(stringResource(R.string.session_report_average_heart_rate), "$it bpm")
+                MetricLine(
+                    label = stringResource(R.string.session_report_average_heart_rate),
+                    value = stringResource(R.string.heart_rate_bpm, it),
+                )
             }
             summary.maximumBpm?.let {
-                MetricLine(stringResource(R.string.session_report_maximum_heart_rate), "$it bpm")
+                MetricLine(
+                    label = stringResource(R.string.session_report_maximum_heart_rate),
+                    value = stringResource(R.string.heart_rate_bpm, it),
+                )
             }
             summary.zoneShare?.let { share ->
                 MetricLine(
                     label = stringResource(R.string.session_report_time_in_zone),
-                    value = "${Formats.duration(secondsInZone)} " +
-                        "(${(share * 100).roundToInt()} %)",
+                    value = stringResource(
+                        R.string.session_report_time_in_zone_value,
+                        Formats.duration(secondsInZone),
+                        (share * 100).roundToInt(),
+                    ),
                 )
             }
             report.energyKcal?.let {

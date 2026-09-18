@@ -1,6 +1,7 @@
 package org.jls.makeitrun.ui.connection
 
 import android.Manifest
+import android.annotation.SuppressLint
 import androidx.annotation.RequiresPermission
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -27,6 +28,7 @@ import javax.inject.Inject
 data class HeartRateConnectionUiState(
     val connection: HeartRateConnectionState = HeartRateConnectionState.Disconnected,
     val isScanning: Boolean = false,
+    val hasScanned: Boolean = false,
     val sensors: List<DiscoveredHeartRateSensor> = emptyList(),
     val profile: HeartRateSensorProfile = HeartRateSensorProfile(
         address = null,
@@ -80,6 +82,8 @@ class HeartRateConnectionViewModel @Inject constructor(
                         } else {
                             it.sensors
                         },
+                        hasScanned = it.hasScanned &&
+                            state !is HeartRateConnectionState.Connected,
                     )
                 }
             }
@@ -109,7 +113,7 @@ class HeartRateConnectionViewModel @Inject constructor(
     )
     fun startScan() {
         scanJob?.cancel()
-        _uiState.update { it.copy(isScanning = true, sensors = emptyList()) }
+        _uiState.update { it.copy(isScanning = true, hasScanned = true, sensors = emptyList()) }
         scanJob = viewModelScope.launch {
             scanner.scan()
                 .catch { error ->
@@ -147,6 +151,7 @@ class HeartRateConnectionViewModel @Inject constructor(
         viewModelScope.launch { client.connect(address) }
     }
 
+    @SuppressLint("MissingPermission")
     fun disconnect() {
         client.disconnect()
     }

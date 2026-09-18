@@ -35,7 +35,7 @@
     <string name="heart_rate_connected">%1$s</string>
     <string name="heart_rate_disconnected">Capteur de fréquence cardiaque non connecté</string>
     <string name="heart_rate_discovering">Lecture du capteur…</string>
-    <string name="heart_rate_no_sensor">Aucun capteur de fréquence cardiaque trouvé. Sur une montre Garmin, active « Diffuser la FC » dans Paramètres, Capteurs et accessoires, FC au poignet.</string>
+    <string name="heart_rate_no_sensor">Aucun capteur de fréquence cardiaque trouvé. Sur une montre Garmin, activez « Diffuser la FC » dans Paramètres, Capteurs et accessoires, FC au poignet.</string>
     <string name="heart_rate_led_description">Indicateur du capteur cardiaque</string>
     <string name="heart_rate_waiting">En attente d\'une mesure…</string>
     <string name="heart_rate_no_frames">Plus de trames reçues, la montre diffuse-t-elle toujours ?</string>
@@ -58,6 +58,10 @@
     <string name="workout_detail_start">Lancer sur le tapis</string>
     <string name="workout_detail_edit">Modifier</string>
     <string name="workout_detail_delete">Supprimer</string>
+    <string name="workout_delete_title">Supprimer cet entraînement ?</string>
+    <string name="workout_delete_message">Il disparaîtra de votre liste. Les séances déjà courues avec cet entraînement restent dans l\'historique.</string>
+    <string name="workout_delete_confirm">Supprimer</string>
+    <string name="workout_delete_cancel">Annuler</string>
     <string name="workout_detail_needs_connection">Connectez le tapis pour lancer cet entraînement.</string>
     <string name="workout_detail_needs_heart_rate">Cet entraînement comporte des consignes de fréquence cardiaque. Connectez votre capteur pour le lancer.</string>
     <string name="editor_title_new">Nouvel entraînement</string>
@@ -86,7 +90,7 @@
     <string name="editor_target_heart_rate">Fréquence cardiaque</string>
     <string name="editor_target_free">Libre</string>
     <string name="editor_heart_rate_zone">%1$d – %2$d bpm</string>
-    <string name="editor_heart_rate_hint">Make It Run ajuste la vitesse tout seul pour te maintenir dans cette zone. Il corrige lentement et par petits pas, parce que le cœur met jusqu\'à une minute à répondre à un changement d\'allure. Un capteur de fréquence cardiaque devra être connecté pour lancer cet entraînement.</string>
+    <string name="editor_heart_rate_hint">Make It Run ajuste la vitesse tout seul pour vous maintenir dans cette zone. Il corrige lentement et par petits pas, parce que le cœur met jusqu\'à une minute à répondre à un changement d\'allure. Un capteur de fréquence cardiaque devra être connecté pour lancer cet entraînement.</string>
     <string name="editor_heart_rate_manual">Saisir la zone</string>
     <string name="editor_heart_rate_min">Mini (bpm)</string>
     <string name="editor_heart_rate_max">Maxi (bpm)</string>
@@ -144,8 +148,8 @@
     <string name="session_heart_rate_waiting">En attente des premiers battements…</string>
     <string name="session_heart_rate_signal_lost">Capteur muet : la vitesse est maintenue jusqu\'à ce qu\'il réponde de nouveau.</string>
     <string name="session_heart_rate_not_worn">Le capteur ne détecte plus de contact : la vitesse est maintenue.</string>
-    <string name="session_heart_rate_at_maximum">Ta fréquence reste basse et le tapis est déjà à sa vitesse maximale.</string>
-    <string name="session_heart_rate_at_minimum">Ta fréquence reste haute et le tapis est déjà à sa vitesse minimale.</string>
+    <string name="session_heart_rate_at_maximum">Votre fréquence reste basse et le tapis est déjà à sa vitesse maximale.</string>
+    <string name="session_heart_rate_at_minimum">Votre fréquence reste haute et le tapis est déjà à sa vitesse minimale.</string>
 
     <string name="session_channel_name">Séance en cours</string>
     <string name="session_preparing">Préparation de la séance…</string>
@@ -181,6 +185,15 @@
     <string name="capabilities_no_inclination">Pente non pilotable à distance</string>
     <string name="capabilities_unknown">Aucun tapis connecté pour l\'instant.</string>
 
+    <string name="debug_command_request_control">Prise de contrôle</string>
+    <string name="debug_command_start">Démarrage</string>
+    <string name="debug_command_stop">Arrêt</string>
+    <string name="debug_command_target_speed">Vitesse cible</string>
+    <string name="debug_command_target_inclination">Pente cible</string>
+    <string name="debug_command_accepted">%1$s : acceptée</string>
+    <string name="debug_command_refused">%1$s : refusée (%2$s)</string>
+    <string name="debug_command_no_answer">%1$s : aucune réponse du tapis</string>
+
     <string name="raw_frame_title">Dernière trame reçue</string>
     <string name="raw_frame_hint">Utile pour comparer le décodage avec la spécification FTMS.</string>
     <string name="debug_requires_connection">Connectez un tapis depuis l\'onglet Entraînements pour voir les mesures.</string>
@@ -191,7 +204,7 @@
     <string name="settings_language_system">Langue du téléphone</string>
 
     <string name="settings_regulation_title">Régulation par fréquence cardiaque</string>
-    <string name="settings_regulation_summary">Sur une étape visant une zone de fréquence cardiaque, Make It Run règle la vitesse lui-même, dans la plage qu\'accepte ton tapis. Ce choix dit avec quelle franchise il corrige. Plus c\'est doux, plus c\'est stable, mais plus il met de temps à atteindre la zone.</string>
+    <string name="settings_regulation_summary">Sur une étape visant une zone de fréquence cardiaque, Make It Run règle la vitesse lui-même, dans la plage qu\'accepte votre tapis. Ce choix dit avec quelle franchise il corrige. Plus c\'est doux, plus c\'est stable, mais plus il met de temps à atteindre la zone.</string>
     <string name="settings_regulation_gentle">Douce</string>
     <string name="settings_regulation_normal">Normale</string>
     <string name="settings_regulation_brisk">Réactive</string>
@@ -237,11 +250,10 @@
     <string name="session_report_delete_confirm">Supprimer</string>
     <string name="session_report_delete_cancel">Annuler</string>
     <string name="session_report_failure">Interrompue : %1$s</string>
-    <string name="session_report_duration">Durée</string>
-    <string name="session_report_distance">Distance</string>
     <string name="session_report_average_heart_rate">Fréquence cardiaque moyenne</string>
     <string name="session_report_maximum_heart_rate">Fréquence cardiaque maximale</string>
     <string name="session_report_time_in_zone">Temps dans la zone</string>
+    <string name="session_report_time_in_zone_value">%1$s (%2$d %%)</string>
     <string name="session_report_energy">Énergie</string>
     <string name="session_report_energy_value">%1$d kcal</string>
     <string name="session_report_chart">Vitesse et fréquence cardiaque</string>

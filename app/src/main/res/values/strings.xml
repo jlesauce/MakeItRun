@@ -59,6 +59,10 @@
     <string name="workout_detail_start">Start on treadmill</string>
     <string name="workout_detail_edit">Edit</string>
     <string name="workout_detail_delete">Delete</string>
+    <string name="workout_delete_title">Delete this workout?</string>
+    <string name="workout_delete_message">It will disappear from your list. Sessions already run with this workout stay in your history.</string>
+    <string name="workout_delete_confirm">Delete</string>
+    <string name="workout_delete_cancel">Cancel</string>
     <string name="workout_detail_needs_connection">Connect the treadmill to start this workout.</string>
     <string name="workout_detail_needs_heart_rate">This workout has heart rate targets. Connect your sensor to start it.</string>
     <string name="editor_title_new">New workout</string>
@@ -182,6 +186,15 @@
     <string name="capabilities_no_inclination">Incline cannot be set remotely</string>
     <string name="capabilities_unknown">No treadmill connected yet.</string>
 
+    <string name="debug_command_request_control">Control request</string>
+    <string name="debug_command_start">Start</string>
+    <string name="debug_command_stop">Stop</string>
+    <string name="debug_command_target_speed">Target speed</string>
+    <string name="debug_command_target_inclination">Target incline</string>
+    <string name="debug_command_accepted">%1$s: accepted</string>
+    <string name="debug_command_refused">%1$s: refused (%2$s)</string>
+    <string name="debug_command_no_answer">%1$s: no answer from the treadmill</string>
+
     <string name="raw_frame_title">Last frame received</string>
     <string name="raw_frame_hint">Useful for comparing the decoding with the FTMS specification.</string>
     <string name="debug_requires_connection">Connect a treadmill from the Workouts tab to see the metrics.</string>
@@ -240,11 +253,10 @@
     <string name="session_report_delete_confirm">Delete</string>
     <string name="session_report_delete_cancel">Cancel</string>
     <string name="session_report_failure">Interrupted: %1$s</string>
-    <string name="session_report_duration">Duration</string>
-    <string name="session_report_distance">Distance</string>
     <string name="session_report_average_heart_rate">Average heart rate</string>
     <string name="session_report_maximum_heart_rate">Peak heart rate</string>
     <string name="session_report_time_in_zone">Time in the zone</string>
+    <string name="session_report_time_in_zone_value">%1$s (%2$d %%)</string>
     <string name="session_report_energy">Energy</string>
     <string name="session_report_energy_value">%1$d kcal</string>
     <string name="session_report_chart">Speed and heart rate</string>

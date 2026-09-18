@@ -35,6 +35,20 @@ private data class StepOffsets(
     val distanceMeters: Int = 0,
 )
 
+private class DistanceTracker(private val offsetMeters: Int = 0) {
+
+    private var originMeters: Int? = null
+    private var coveredMeters = 0
+
+    fun update(totalMeters: Int?): Int {
+        if (totalMeters != null) {
+            val origin = originMeters ?: totalMeters.also { originMeters = it }
+            coveredMeters = (totalMeters - origin).coerceAtLeast(coveredMeters)
+        }
+        return offsetMeters + coveredMeters
+    }
+}
+
 @SuppressLint("MissingPermission")
 @Singleton
 class WorkoutSessionEngine @Inject constructor(
@@ -58,6 +72,8 @@ class WorkoutSessionEngine @Inject constructor(
     private var beltStoppedSinceMillis: Long? = null
     private var lowestSpeedSincePauseKmh: Double? = null
     private var beltRestartedSinceMillis: Long? = null
+
+    @Volatile
     private var pausedByTreadmill = false
 
     val runningWorkoutId: Long?
@@ -164,8 +180,7 @@ class WorkoutSessionEngine @Inject constructor(
             }
             client.start()
 
-            val sessionDistanceOrigin = currentTreadmillDistance()
-            val sessionDistanceOffset = resumeFrom?.distanceMeters ?: 0
+            val sessionDistance = DistanceTracker(resumeFrom?.distanceMeters ?: 0)
             val firstStepIndex = resumeFrom?.stepIndex ?: 0
             var completedStepsSeconds = resumeFrom?.completedStepsSeconds ?: 0
 
@@ -176,8 +191,7 @@ class WorkoutSessionEngine @Inject constructor(
                     steps = steps,
                     index = index,
                     completedStepsSeconds = completedStepsSeconds,
-                    sessionDistanceOrigin = sessionDistanceOrigin,
-                    sessionDistanceOffset = sessionDistanceOffset,
+                    sessionDistance = sessionDistance,
                     stepOffsets = if (index == firstStepIndex) {
                         StepOffsets(
                             elapsedSeconds = resumeFrom?.stepElapsedSeconds ?: 0,
@@ -197,8 +211,7 @@ class WorkoutSessionEngine @Inject constructor(
             _state.value = SessionState.Finished(
                 workoutName = workout.name,
                 totalElapsedSeconds = completedStepsSeconds,
-                totalDistanceMeters = sessionDistanceOffset +
-                    (currentTreadmillDistance() - sessionDistanceOrigin).coerceAtLeast(0),
+                totalDistanceMeters = sessionDistance.update(treadmillDistance()),
             )
         } catch (cancellation: CancellationException) {
             throw cancellation
@@ -209,6 +222,8 @@ class WorkoutSessionEngine @Inject constructor(
             failureReason = failure.message ?: "Erreur pendant la seance"
             _state.value = SessionState.Failed(failureReason)
         } finally {
+            speedGuardJob?.cancel()
+            speedGuardJob = null
             withContext(NonCancellable) {
                 runCatching { recorder?.finish(outcome, failureReason) }
                     .onFailure { Timber.e(it, "Seance non enregistree dans l'historique") }
@@ -228,15 +243,14 @@ class WorkoutSessionEngine @Inject constructor(
         steps: List<ResolvedStep>,
         index: Int,
         completedStepsSeconds: Int,
-        sessionDistanceOrigin: Int,
-        sessionDistanceOffset: Int,
+        sessionDistance: DistanceTracker,
         stepOffsets: StepOffsets,
         capabilities: TreadmillCapabilities?,
         responsiveness: RegulationResponsiveness,
         recorder: SessionRecorder?,
     ): Int {
         val resolved = steps[index]
-        val stepDistanceOrigin = currentTreadmillDistance()
+        val stepDistance = DistanceTracker(stepOffsets.distanceMeters)
         val stepStartedAt = SystemClock.elapsedRealtime()
         skipRequested.value = false
         var pausedMillis = 0L
@@ -271,8 +285,8 @@ class WorkoutSessionEngine @Inject constructor(
             val pausedSoFar = pausedMillis + (pauseStartedAt?.let { now - it } ?: 0L)
             val elapsedSeconds = stepOffsets.elapsedSeconds +
                 ((now - stepStartedAt - pausedSoFar) / 1_000).toInt()
-            val coveredMeters = stepOffsets.distanceMeters +
-                (currentTreadmillDistance() - stepDistanceOrigin).coerceAtLeast(0)
+            val treadmillDistance = treadmillDistance()
+            val coveredMeters = stepDistance.update(treadmillDistance)
 
             if (regulator != null && !paused) {
                 regulation = regulator.update(now, heartRateClient.sample.value)
@@ -290,8 +304,7 @@ class WorkoutSessionEngine @Inject constructor(
                 remaining = StepProgress.remaining(resolved.step, elapsedSeconds, coveredMeters),
                 stepFraction = StepProgress.fraction(resolved.step, elapsedSeconds, coveredMeters),
                 totalElapsedSeconds = completedStepsSeconds + elapsedSeconds,
-                totalDistanceMeters = sessionDistanceOffset +
-                    (currentTreadmillDistance() - sessionDistanceOrigin).coerceAtLeast(0),
+                totalDistanceMeters = sessionDistance.update(treadmillDistance),
                 liveData = client.treadmillData.value,
                 regulation = regulation,
             )
@@ -444,8 +457,7 @@ class WorkoutSessionEngine @Inject constructor(
     private fun isBeltMoving(): Boolean =
         (client.treadmillData.value?.instantaneousSpeedKmh ?: 0.0) > BELT_MOVING_THRESHOLD_KMH
 
-    private fun currentTreadmillDistance(): Int =
-        client.treadmillData.value?.totalDistanceMeters ?: 0
+    private fun treadmillDistance(): Int? = client.treadmillData.value?.totalDistanceMeters
 
     private companion object {
         const val COUNTDOWN_SECONDS = 5

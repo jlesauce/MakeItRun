@@ -1,6 +1,7 @@
 package org.jls.makeitrun.ui.connection
 
 import android.Manifest
+import android.annotation.SuppressLint
 import androidx.annotation.RequiresPermission
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -25,6 +26,7 @@ import javax.inject.Inject
 data class ConnectionUiState(
     val connection: TreadmillConnectionState = TreadmillConnectionState.Disconnected,
     val isScanning: Boolean = false,
+    val hasScanned: Boolean = false,
     val showAllDevices: Boolean = false,
     val devices: List<DiscoveredTreadmill> = emptyList(),
     val profile: TreadmillProfile = TreadmillProfile(null, null, null, showPaceInsteadOfSpeed = true),
@@ -70,6 +72,8 @@ class ConnectionViewModel @Inject constructor(
                         } else {
                             it.devices
                         },
+                        hasScanned = it.hasScanned &&
+                            state !is TreadmillConnectionState.Connected,
                     )
                 }
             }
@@ -86,7 +90,7 @@ class ConnectionViewModel @Inject constructor(
     )
     fun startScan() {
         scanJob?.cancel()
-        _uiState.update { it.copy(isScanning = true, devices = emptyList()) }
+        _uiState.update { it.copy(isScanning = true, hasScanned = true, devices = emptyList()) }
         scanJob = viewModelScope.launch {
             scanner.scan(fitnessMachinesOnly = !_uiState.value.showAllDevices)
                 .catch { error ->
@@ -128,6 +132,7 @@ class ConnectionViewModel @Inject constructor(
         viewModelScope.launch { client.connect(address) }
     }
 
+    @SuppressLint("MissingPermission")
     fun disconnect() {
         client.disconnect()
     }

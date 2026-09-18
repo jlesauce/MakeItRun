@@ -78,7 +78,8 @@ fun HeartRateBanner(
             }
 
             AnimatedVisibility(
-                visible = !state.isConnected && (state.isScanning || state.sensors.isNotEmpty())
+                visible = !state.isConnected &&
+                    (state.isScanning || state.hasScanned || state.sensors.isNotEmpty())
             ) {
                 SensorList(state = state, viewModel = viewModel)
             }

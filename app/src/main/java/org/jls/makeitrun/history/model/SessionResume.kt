@@ -19,8 +19,10 @@ object SessionResume {
 
     private val RESUMABLE_OUTCOMES = setOf(SessionOutcome.STOPPED, SessionOutcome.FAILED)
 
+    fun isResumableOutcome(outcome: SessionOutcome): Boolean = outcome in RESUMABLE_OUTCOMES
+
     fun isResumable(summary: SessionSummary, nowMillis: Long): Boolean =
-        summary.outcome in RESUMABLE_OUTCOMES &&
+        isResumableOutcome(summary.outcome) &&
             summary.elapsedSeconds > 0 &&
             summary.stepsCompleted < summary.stepCount &&
             isWithinWindow(summary.endedAt, nowMillis)

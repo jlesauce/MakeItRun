@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -28,10 +29,14 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -55,8 +60,19 @@ fun WorkoutDetailScreen(
     viewModel: WorkoutDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    var confirmingDelete by remember { mutableStateOf(false) }
 
     LaunchedEffect(workoutId) { viewModel.load(workoutId) }
+
+    if (confirmingDelete) {
+        DeleteWorkoutDialog(
+            onConfirm = {
+                confirmingDelete = false
+                viewModel.delete(onBack)
+            },
+            onDismiss = { confirmingDelete = false },
+        )
+    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -75,7 +91,7 @@ fun WorkoutDetailScreen(
                             contentDescription = stringResource(R.string.workout_detail_edit),
                         )
                     }
-                    IconButton(onClick = { viewModel.delete(onBack) }) {
+                    IconButton(onClick = { confirmingDelete = true }) {
                         Icon(
                             imageVector = Icons.Default.Delete,
                             contentDescription = stringResource(R.string.workout_detail_delete),
@@ -227,4 +243,23 @@ private fun StartBar(state: WorkoutDetailUiState, onStart: () -> Unit) {
             )
         }
     }
+}
+
+@Composable
+private fun DeleteWorkoutDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.workout_delete_title)) },
+        text = { Text(stringResource(R.string.workout_delete_message)) },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text(stringResource(R.string.workout_delete_confirm))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.workout_delete_cancel))
+            }
+        },
+    )
 }

@@ -71,7 +71,8 @@ fun ConnectionBanner(
             }
 
             AnimatedVisibility(
-                visible = !state.isConnected && (state.isScanning || state.devices.isNotEmpty())
+                visible = !state.isConnected &&
+                    (state.isScanning || state.hasScanned || state.devices.isNotEmpty())
             ) {
                 DeviceList(state = state, viewModel = viewModel)
             }

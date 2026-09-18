@@ -48,7 +48,15 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          echo "$KEYSTORE_BASE64" | base64 --decode > makeitrun-release.jks
+          if [ -z "$KEYSTORE_BASE64" ] || [ -z "$KEYSTORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASSWORD" ]; then
+            echo "Un secret de signature est manquant (KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD)." >&2
+            exit 1
+          fi
+          printf '%s' "$KEYSTORE_BASE64" | tr -d '[:space:]' | base64 --decode > makeitrun-release.jks
+          if [ ! -s makeitrun-release.jks ]; then
+            echo "Le keystore décodé est vide." >&2
+            exit 1
+          fi
           {
             echo "storeFile=makeitrun-release.jks"
             echo "storePassword=$KEYSTORE_PASSWORD"

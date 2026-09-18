@@ -77,10 +77,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" \
-            --title "Make It Run $GITHUB_REF_NAME" \
-            --notes-file - \
-            artefacts/*.apk <<'EOF'
+          tag="$GITHUB_REF_NAME"
+          notes="$(mktemp)"
+          {
+            cat <<'EOF'
           Téléchargez le fichier `.apk` ci-dessous et ouvrez-le sur votre téléphone.
           Android demandera l'autorisation d'installer une application issue d'une
           source inconnue : c'est normal pour une distribution hors Play Store.
@@ -88,4 +88,25 @@ jobs:
           Il vous faut un tapis de course compatible FTMS. Un capteur de fréquence
           cardiaque Bluetooth est facultatif, et nécessaire seulement pour les étapes
           qui visent une plage de fréquence.
+
           EOF
+            awk -v ver="${tag#v}" '
+              $0 ~ "^## " {
+                in_section = ($0 ~ "^## v?" ver "( |$)")
+                next
+              }
+              in_section { print }
+            ' RELEASE_NOTES.md
+          } > "$notes"
+
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" artefacts/*.apk --clobber
+            gh release edit "$tag" \
+              --title "Make It Run $tag" \
+              --notes-file "$notes"
+          else
+            gh release create "$tag" \
+              --title "Make It Run $tag" \
+              --notes-file "$notes" \
+              artefacts/*.apk
+          fi

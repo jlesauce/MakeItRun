@@ -9,6 +9,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import kotlinx.serialization.json.Json
 import org.jls.makeitrun.data.MakeItRunDatabase
+import org.jls.makeitrun.data.SessionHistoryDao
 import org.jls.makeitrun.data.TreadmillProfileRepository
 import org.jls.makeitrun.data.TreadmillProfileStore
 import org.jls.makeitrun.data.WorkoutDao
@@ -35,6 +36,10 @@ object DataModule {
 
     @Provides
     fun provideWorkoutDao(database: MakeItRunDatabase): WorkoutDao = database.workoutDao()
+
+    @Provides
+    fun provideSessionHistoryDao(database: MakeItRunDatabase): SessionHistoryDao =
+        database.sessionHistoryDao()
 
     @Provides
     fun provideTreadmillProfileStore(

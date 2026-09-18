@@ -272,18 +272,26 @@ class FtmsTreadmillClient(
         val characteristic = controlPoint ?: return null
         val sentOpCode = FtmsOpCode.fromValue(command.value[0])
 
-        return coroutineScope {
-            val pendingResponse = async(start = CoroutineStart.UNDISPATCHED) {
-                withTimeoutOrNull(CONTROL_RESPONSE_TIMEOUT_MS) {
+        val response = withTimeoutOrNull(CONTROL_COMMAND_TIMEOUT_MS) {
+            coroutineScope {
+                val pendingResponse = async(start = CoroutineStart.UNDISPATCHED) {
                     _controlResponses.first { it.requestOpCode == sentOpCode }
                 }
+
+                Timber.d("Control Point -> %s", command.value.toHexString())
+                characteristic.write(command, BleWriteType.DEFAULT)
+
+                pendingResponse.await()
             }
-
-            Timber.d("Control Point -> %s", command.value.toHexString())
-            characteristic.write(command, BleWriteType.DEFAULT)
-
-            pendingResponse.await()
         }
+
+        if (response == null) {
+            Timber.w(
+                "Le tapis n'a pas traite la commande %s dans le temps imparti",
+                command.value.toHexString(),
+            )
+        }
+        return response
     }
 
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
@@ -402,7 +410,7 @@ class FtmsTreadmillClient(
         const val CHARACTERISTIC_READ_TIMEOUT_MS = 5_000L
         const val CHARACTERISTIC_READ_ATTEMPTS = 2
         const val CHARACTERISTIC_READ_RETRY_MILLIS = 500L
-        const val CONTROL_RESPONSE_TIMEOUT_MS = 3_000L
+        const val CONTROL_COMMAND_TIMEOUT_MS = 5_000L
         const val RECONNECTION_ATTEMPTS = 3
         const val RECONNECTION_DELAY_MILLIS = 5_000L
         const val STOP_PARAMETER: Byte = 0x01

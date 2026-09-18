@@ -11,6 +11,9 @@ Vous composez une séance dans l'application (échauffement, blocs répétés, r
 calme), vous la lancez, et Make It Run envoie la vitesse et la pente au tapis étape par étape. Plus
 besoin de surveiller le chrono ni de régler la machine à la main entre deux fractions.
 
+> **[Guide d'utilisation](docs/guide-utilisateur.md)** — comment connecter son tapis, créer sa
+> première séance et la courir, expliqué pas à pas.
+
 ## Fonctionnalités
 
 - **Connexion Bluetooth Low Energy** à un tapis FTMS : détection des machines à portée, connexion,
@@ -18,17 +21,36 @@ besoin de surveiller le chrono ni de régler la machine à la main entre deux fr
   dernier tapis utilisé.
 - **Éditeur d'entraînements** : étapes typées (échauffement, effort, récupération, retour au calme),
   fin d'étape au temps ou à la distance, allure/vitesse et inclinaison imposées ou libres, blocs
-  répétés pour le fractionné.
+  répétés pour le fractionné, avec la possibilité d'en sauter la dernière étape à la dernière
+  répétition.
+- **Étapes pilotées par la fréquence cardiaque** : plutôt qu'une vitesse, l'étape vise une zone de
+  battements et l'application cherche elle-même l'allure qui vous y maintient, par petits pas
+  espacés pour laisser le cœur répondre. La franchise de correction se règle globalement et se
+  surcharge étape par étape.
+- **Capteur cardiaque Bluetooth** : ceinture pectorale ou montre diffusant sa fréquence, avec
+  reconnexion automatique et repli sûr quand le signal se tait.
 - **Exécution pilotée** : décompte de départ, consigne envoyée automatiquement à chaque changement
-  d'étape, temps et distance restants, étape suivante annoncée, pause et arrêt d'urgence.
+  d'étape et renvoyée si la machine l'ignore, temps et distance restants, étape suivante annoncée,
+  pause, saut d'étape et arrêt.
+- **Suivi du tapis** : arrêter la courroie depuis la console de la machine met la séance en pause, et
+  la relancer la fait repartir. Toute la séance peut se mener depuis les boutons du tapis.
 - **Séance en arrière-plan** : un service de premier plan maintient l'entraînement en vie et affiche
-  sa progression dans une notification, même si l'écran est quitté ou verrouillé.
+  sa progression dans une notification, même si l'écran est quitté ou verrouillé. L'écran de séance
+  est verrouillé tant qu'elle dure, et le tapis est arrêté si l'application est fermée.
+- **Historique et rapport de séance** : un relevé par seconde, un graphe superposant vitesse et
+  fréquence cardiaque, le détail étape par étape comparant le prévu au réalisé, et les compteurs
+  affichés par le tapis.
+- **Reprise d'une séance interrompue** : dans les trente minutes, une séance arrêtée en cours de
+  route repart à l'étape où elle s'était arrêtée et prolonge l'enregistrement d'origine.
 - **Mesures en direct** : vitesse, allure, distance, temps, inclinaison, fréquence cardiaque et
   dépense énergétique telles que remontées par le tapis.
+- **Sauvegarde** : export et import des entraînements et du profil du tapis dans un fichier que vous
+  conservez vous-même.
 - **Onglet Debug** : pilotage manuel de la machine, capacités déclarées et dernière trame FTMS reçue,
   utile pour comparer le décodage avec la spécification.
 
-Les entraînements sont stockés localement (Room) ; l'application ne communique avec aucun serveur.
+L'application est disponible en français et en anglais. Les données sont stockées localement (Room et
+DataStore) ; l'application ne communique avec aucun serveur.
 
 ## Avertissement
 
@@ -47,8 +69,17 @@ consigne de pente, ou n'exposent qu'une partie des mesures.
 
 - Android 8.0 (API 26) ou supérieur, avec Bluetooth Low Energy.
 - Un tapis de course exposant le service Bluetooth **FTMS** (UUID `0x1826`).
-- Côté développement : JDK 17 et Android Studio récent (le projet utilise Gradle 9.5, AGP 9.x,
-  Kotlin 2.4 et compile contre le SDK 37).
+- Facultatif : un capteur de fréquence cardiaque Bluetooth, nécessaire seulement pour les étapes qui
+  visent une zone de fréquence.
+- Côté développement : JDK 17 ou plus récent et Android Studio récent. Le projet utilise Gradle 9.5,
+  AGP 9.3, Kotlin 2.4 et compile contre le SDK 37.
+
+## Installation
+
+Les versions publiées sont disponibles dans les [releases](../../releases) du dépôt, sous forme
+d'APK signé. Téléchargez le fichier `.apk` et ouvrez-le sur le téléphone ; Android demandera
+l'autorisation d'installer une application issue d'une source inconnue, ce qui est normal pour une
+distribution hors Play Store.
 
 ## Compiler et lancer
 
@@ -59,27 +90,41 @@ consigne de pente, ou n'exposent qu'une partie des mesures.
 # Installer sur un appareil connecté en ADB
 ./gradlew installDebug
 
-# Tests unitaires (logique d'entraînement et décodage FTMS)
+# Tests unitaires (logique d'entraînement, historique, décodage FTMS et cardio)
 ./gradlew test
 ```
 
-Le décodage FTMS et la logique de séance sont couverts par des tests unitaires JVM, mais tout ce qui
-touche au Bluetooth demande un vrai tapis : l'émulateur ne permet pas de tester la connexion.
+La logique métier est couverte par des tests unitaires JVM : décodage des trames FTMS et cardio,
+déroulement d'un plan d'entraînement, progression d'étape, régulation par fréquence cardiaque,
+enregistrement et relecture d'une séance, reprise d'une séance interrompue, sauvegarde et formatage.
+Tout ce qui touche au Bluetooth demande en revanche un vrai tapis : l'émulateur ne permet pas de
+tester la connexion.
+
+## Publication
+
+Un workflow GitHub Actions construit, signe et publie l'APK lorsqu'un tag `v*` est poussé. Il refuse
+un tag qui ne correspond pas à la version déclarée dans `gradle.properties`, et le matériel de
+signature est reconstitué depuis les secrets du dépôt puis effacé en fin de course.
 
 ## Structure du projet
 
-| Module  | Rôle                                                                                     |
-| ------- | ---------------------------------------------------------------------------------------- |
-| `:ftms` | Couche Bluetooth : scan, client GATT, encodage des commandes et décodage des trames FTMS. |
-| `:app`  | Interface Compose, modèle d'entraînement, persistance et moteur de séance.                |
+| Module       | Rôle                                                                                      |
+| ------------ | ----------------------------------------------------------------------------------------- |
+| `:app`       | Interface Compose, modèle d'entraînement, persistance, moteur de séance et historique.     |
+| `:ftms`      | Couche Bluetooth du tapis : scan, client GATT, encodage des commandes et décodage des trames. |
+| `:heartrate` | Couche Bluetooth du capteur cardiaque : scan, client GATT et décodage des mesures.          |
 
 Principaux paquets de `:app` :
 
 - `workout/` — modèle d'entraînement (étapes, blocs répétés, allures) et écrans liste / résumé /
   éditeur.
-- `session/` — moteur de séance, état exposé à l'interface, service de premier plan.
-- `data/` — base Room des entraînements et profil du dernier tapis connecté (DataStore).
-- `ui/` — navigation, bandeau de connexion et demande des permissions Bluetooth.
+- `session/` — moteur de séance, régulation par fréquence cardiaque, état exposé à l'interface et
+  service de premier plan.
+- `history/` — liste des séances passées, rapport détaillé et statistiques.
+- `data/` — base Room des entraînements et des séances, enregistrement des relevés, sauvegarde, et
+  profils du tapis et du capteur (DataStore).
+- `ui/` — navigation, bandeaux de connexion et demande des permissions Bluetooth.
+- `settings/`, `about/` — préférences (langue, régulation, sauvegarde) et écran d'informations.
 - `debug/` — écran de pilotage manuel et d'inspection des trames.
 
 L'application est écrite en Kotlin avec Jetpack Compose, Hilt pour l'injection de dépendances, Room

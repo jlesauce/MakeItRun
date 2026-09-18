@@ -222,6 +222,16 @@ class WorkoutEditorViewModel @Inject constructor(
         }
     }
 
+    fun setSkipLastStepOnFinalRepetition(blockId: String, skip: Boolean) {
+        _uiState.update { state ->
+            state.copy(
+                elements = state.elements.mapBlock(blockId) {
+                    it.copy(skipLastStepOnFinalRepetition = skip)
+                }
+            )
+        }
+    }
+
     fun remove(elementId: String, parentBlockId: String? = null) {
         _uiState.update { state ->
             val elements = if (parentBlockId == null) {

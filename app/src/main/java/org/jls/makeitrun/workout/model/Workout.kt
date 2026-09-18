@@ -73,7 +73,16 @@ data class RepeatBlock(
     override val id: String,
     val repetitions: Int,
     val steps: List<WorkoutStep>,
-) : WorkoutElement
+    val skipLastStepOnFinalRepetition: Boolean = false,
+) : WorkoutElement {
+
+    fun stepsForRepetition(iteration: Int): List<WorkoutStep> =
+        if (skipLastStepOnFinalRepetition && iteration == repetitions - 1) {
+            steps.dropLast(1)
+        } else {
+            steps
+        }
+}
 
 data class Workout(
     val id: Long = 0L,

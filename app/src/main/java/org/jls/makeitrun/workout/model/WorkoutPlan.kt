@@ -38,7 +38,7 @@ object WorkoutPlan {
                 )
 
                 is RepeatBlock -> repeat(element.repetitions) { iteration ->
-                    element.steps.forEach { step ->
+                    element.stepsForRepetition(iteration).forEach { step ->
                         resolved += ResolvedStep(
                             step = step,
                             position = resolved.size,

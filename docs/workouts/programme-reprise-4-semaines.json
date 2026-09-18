@@ -1,0 +1,167 @@
+{
+    "format": 2,
+    "exportedAt": 1789603200000,
+    "treadmill": null,
+    "workouts": [
+        {
+            "name": "S1 J1 - Endurance facile 40 min",
+            "createdAt": 1789603200001,
+            "elements": [
+                {"kind": "step", "id": "s1j1-warmup", "type": "WARM_UP", "duration": {"kind": "time", "seconds": 600}, "targetSpeedKmh": 5.8, "inclinationPercent": 1.0},
+                {"kind": "step", "id": "s1j1-run", "type": "RUN", "duration": {"kind": "time", "seconds": 1200}, "inclinationPercent": 1.0, "heartRateTarget": {"minBpm": 130, "maxBpm": 145}, "regulationResponsiveness": "GENTLE"},
+                {"kind": "step", "id": "s1j1-finish", "type": "RUN", "duration": {"kind": "time", "seconds": 300}, "inclinationPercent": 1.0, "heartRateTarget": {"minBpm": 145, "maxBpm": 155}, "regulationResponsiveness": "NORMAL"},
+                {"kind": "step", "id": "s1j1-cooldown", "type": "COOL_DOWN", "duration": {"kind": "time", "seconds": 300}, "targetSpeedKmh": 5.5, "inclinationPercent": 0.0}
+            ]
+        },
+        {
+            "name": "S1 J2 - Alternance reprise 40 min",
+            "createdAt": 1789603200002,
+            "elements": [
+                {"kind": "step", "id": "s1j2-warmup", "type": "WARM_UP", "duration": {"kind": "time", "seconds": 600}, "targetSpeedKmh": 5.8, "inclinationPercent": 1.0},
+                {
+                    "kind": "repeat",
+                    "id": "s1j2-repeat",
+                    "repetitions": 6,
+                    "steps": [
+                        {"kind": "step", "id": "s1j2-run", "type": "RUN", "duration": {"kind": "time", "seconds": 120}, "targetSpeedKmh": 9.5, "inclinationPercent": 1.0},
+                        {"kind": "step", "id": "s1j2-recover", "type": "RECOVER", "duration": {"kind": "time", "seconds": 120}, "targetSpeedKmh": 6.2, "inclinationPercent": 1.0}
+                    ]
+                },
+                {"kind": "step", "id": "s1j2-cooldown", "type": "COOL_DOWN", "duration": {"kind": "time", "seconds": 360}, "targetSpeedKmh": 5.3, "inclinationPercent": 0.0}
+            ]
+        },
+        {
+            "name": "S1 J3 - Marche inclinee 45 min",
+            "createdAt": 1789603200003,
+            "elements": [
+                {"kind": "step", "id": "s1j3-warmup", "type": "WARM_UP", "duration": {"kind": "time", "seconds": 600}, "targetSpeedKmh": 5.5, "inclinationPercent": 1.0},
+                {
+                    "kind": "repeat",
+                    "id": "s1j3-repeat",
+                    "repetitions": 5,
+                    "steps": [
+                        {"kind": "step", "id": "s1j3-climb", "type": "RUN", "duration": {"kind": "time", "seconds": 180}, "targetSpeedKmh": 6.8, "inclinationPercent": 4.0},
+                        {"kind": "step", "id": "s1j3-recover", "type": "RECOVER", "duration": {"kind": "time", "seconds": 120}, "targetSpeedKmh": 5.8, "inclinationPercent": 1.0}
+                    ]
+                },
+                {"kind": "step", "id": "s1j3-cooldown", "type": "COOL_DOWN", "duration": {"kind": "time", "seconds": 600}, "targetSpeedKmh": 5.0, "inclinationPercent": 0.0}
+            ]
+        },
+        {
+            "name": "S2 J1 - Endurance facile 40 min",
+            "createdAt": 1789603200004,
+            "elements": [
+                {"kind": "step", "id": "s2j1-warmup", "type": "WARM_UP", "duration": {"kind": "time", "seconds": 480}, "targetSpeedKmh": 5.8, "inclinationPercent": 1.0},
+                {"kind": "step", "id": "s2j1-run", "type": "RUN", "duration": {"kind": "time", "seconds": 1620}, "inclinationPercent": 1.0, "heartRateTarget": {"minBpm": 130, "maxBpm": 145}, "regulationResponsiveness": "GENTLE"},
+                {"kind": "step", "id": "s2j1-cooldown", "type": "COOL_DOWN", "duration": {"kind": "time", "seconds": 300}, "targetSpeedKmh": 5.5, "inclinationPercent": 0.0}
+            ]
+        },
+        {
+            "name": "S2 J2 - Intervalles controles 39 min",
+            "createdAt": 1789603200005,
+            "elements": [
+                {"kind": "step", "id": "s2j2-warmup", "type": "WARM_UP", "duration": {"kind": "time", "seconds": 600}, "targetSpeedKmh": 6.0, "inclinationPercent": 1.0},
+                {
+                    "kind": "repeat",
+                    "id": "s2j2-repeat",
+                    "repetitions": 6,
+                    "steps": [
+                        {"kind": "step", "id": "s2j2-run", "type": "RUN", "duration": {"kind": "time", "seconds": 120}, "targetSpeedKmh": 10.0, "inclinationPercent": 1.0},
+                        {"kind": "step", "id": "s2j2-recover", "type": "RECOVER", "duration": {"kind": "time", "seconds": 120}, "targetSpeedKmh": 6.2, "inclinationPercent": 1.0}
+                    ]
+                },
+                {"kind": "step", "id": "s2j2-cooldown", "type": "COOL_DOWN", "duration": {"kind": "time", "seconds": 300}, "targetSpeedKmh": 5.3, "inclinationPercent": 0.0}
+            ]
+        },
+        {
+            "name": "S2 J3 - Endurance longue 45 min",
+            "createdAt": 1789603200006,
+            "elements": [
+                {"kind": "step", "id": "s2j3-warmup", "type": "WARM_UP", "duration": {"kind": "time", "seconds": 600}, "targetSpeedKmh": 5.8, "inclinationPercent": 1.0},
+                {"kind": "step", "id": "s2j3-run", "type": "RUN", "duration": {"kind": "time", "seconds": 1200}, "inclinationPercent": 1.0, "heartRateTarget": {"minBpm": 130, "maxBpm": 145}, "regulationResponsiveness": "GENTLE"},
+                {"kind": "step", "id": "s2j3-finish", "type": "RUN", "duration": {"kind": "time", "seconds": 600}, "inclinationPercent": 1.0, "heartRateTarget": {"minBpm": 145, "maxBpm": 155}, "regulationResponsiveness": "NORMAL"},
+                {"kind": "step", "id": "s2j3-cooldown", "type": "COOL_DOWN", "duration": {"kind": "time", "seconds": 300}, "targetSpeedKmh": 5.3, "inclinationPercent": 0.0}
+            ]
+        },
+        {
+            "name": "S3 J1 - Endurance facile 45 min",
+            "createdAt": 1789603200007,
+            "elements": [
+                {"kind": "step", "id": "s3j1-warmup", "type": "WARM_UP", "duration": {"kind": "time", "seconds": 480}, "targetSpeedKmh": 5.8, "inclinationPercent": 1.0},
+                {"kind": "step", "id": "s3j1-run", "type": "RUN", "duration": {"kind": "time", "seconds": 1920}, "inclinationPercent": 1.0, "heartRateTarget": {"minBpm": 130, "maxBpm": 145}, "regulationResponsiveness": "GENTLE"},
+                {"kind": "step", "id": "s3j1-cooldown", "type": "COOL_DOWN", "duration": {"kind": "time", "seconds": 300}, "targetSpeedKmh": 5.3, "inclinationPercent": 0.0}
+            ]
+        },
+        {
+            "name": "S3 J2 - Intervalles cardio 42 min",
+            "createdAt": 1789603200008,
+            "elements": [
+                {"kind": "step", "id": "s3j2-warmup", "type": "WARM_UP", "duration": {"kind": "time", "seconds": 600}, "targetSpeedKmh": 6.0, "inclinationPercent": 1.0},
+                {
+                    "kind": "repeat",
+                    "id": "s3j2-repeat",
+                    "repetitions": 6,
+                    "steps": [
+                        {"kind": "step", "id": "s3j2-run", "type": "RUN", "duration": {"kind": "time", "seconds": 120}, "targetSpeedKmh": 10.5, "inclinationPercent": 1.0},
+                        {"kind": "step", "id": "s3j2-recover", "type": "RECOVER", "duration": {"kind": "time", "seconds": 120}, "targetSpeedKmh": 6.2, "inclinationPercent": 1.0}
+                    ]
+                },
+                {"kind": "step", "id": "s3j2-cooldown", "type": "COOL_DOWN", "duration": {"kind": "time", "seconds": 480}, "targetSpeedKmh": 5.3, "inclinationPercent": 0.0}
+            ]
+        },
+        {
+            "name": "S3 J3 - Cotes toniques 45 min",
+            "createdAt": 1789603200009,
+            "elements": [
+                {"kind": "step", "id": "s3j3-warmup", "type": "WARM_UP", "duration": {"kind": "time", "seconds": 600}, "targetSpeedKmh": 5.8, "inclinationPercent": 1.0},
+                {
+                    "kind": "repeat",
+                    "id": "s3j3-repeat",
+                    "repetitions": 6,
+                    "steps": [
+                        {"kind": "step", "id": "s3j3-climb", "type": "RUN", "duration": {"kind": "time", "seconds": 180}, "targetSpeedKmh": 7.0, "inclinationPercent": 5.0},
+                        {"kind": "step", "id": "s3j3-recover", "type": "RECOVER", "duration": {"kind": "time", "seconds": 120}, "targetSpeedKmh": 6.0, "inclinationPercent": 1.0}
+                    ]
+                },
+                {"kind": "step", "id": "s3j3-cooldown", "type": "COOL_DOWN", "duration": {"kind": "time", "seconds": 300}, "targetSpeedKmh": 5.0, "inclinationPercent": 0.0}
+            ]
+        },
+        {
+            "name": "S4 J1 - Endurance facile 50 min",
+            "createdAt": 1789603200010,
+            "elements": [
+                {"kind": "step", "id": "s4j1-warmup", "type": "WARM_UP", "duration": {"kind": "time", "seconds": 600}, "targetSpeedKmh": 5.8, "inclinationPercent": 1.0},
+                {"kind": "step", "id": "s4j1-run", "type": "RUN", "duration": {"kind": "time", "seconds": 1800}, "inclinationPercent": 1.0, "heartRateTarget": {"minBpm": 130, "maxBpm": 145}, "regulationResponsiveness": "GENTLE"},
+                {"kind": "step", "id": "s4j1-finish", "type": "RUN", "duration": {"kind": "time", "seconds": 300}, "inclinationPercent": 1.0, "heartRateTarget": {"minBpm": 145, "maxBpm": 155}, "regulationResponsiveness": "NORMAL"},
+                {"kind": "step", "id": "s4j1-cooldown", "type": "COOL_DOWN", "duration": {"kind": "time", "seconds": 300}, "targetSpeedKmh": 5.3, "inclinationPercent": 0.0}
+            ]
+        },
+        {
+            "name": "S4 J2 - Tempo controle 43 min",
+            "createdAt": 1789603200011,
+            "elements": [
+                {"kind": "step", "id": "s4j2-warmup", "type": "WARM_UP", "duration": {"kind": "time", "seconds": 600}, "targetSpeedKmh": 6.0, "inclinationPercent": 1.0},
+                {
+                    "kind": "repeat",
+                    "id": "s4j2-repeat",
+                    "repetitions": 3,
+                    "steps": [
+                        {"kind": "step", "id": "s4j2-run", "type": "RUN", "duration": {"kind": "time", "seconds": 360}, "inclinationPercent": 1.0, "heartRateTarget": {"minBpm": 150, "maxBpm": 160}, "regulationResponsiveness": "NORMAL"},
+                        {"kind": "step", "id": "s4j2-recover", "type": "RECOVER", "duration": {"kind": "time", "seconds": 180}, "targetSpeedKmh": 6.2, "inclinationPercent": 1.0}
+                    ]
+                },
+                {"kind": "step", "id": "s4j2-cooldown", "type": "COOL_DOWN", "duration": {"kind": "time", "seconds": 360}, "targetSpeedKmh": 5.3, "inclinationPercent": 0.0}
+            ]
+        },
+        {
+            "name": "S4 J3 - Endurance progressive 50 min",
+            "createdAt": 1789603200012,
+            "elements": [
+                {"kind": "step", "id": "s4j3-warmup", "type": "WARM_UP", "duration": {"kind": "time", "seconds": 600}, "targetSpeedKmh": 5.8, "inclinationPercent": 1.0},
+                {"kind": "step", "id": "s4j3-easy", "type": "RUN", "duration": {"kind": "time", "seconds": 900}, "inclinationPercent": 1.0, "heartRateTarget": {"minBpm": 130, "maxBpm": 145}, "regulationResponsiveness": "GENTLE"},
+                {"kind": "step", "id": "s4j3-steady", "type": "RUN", "duration": {"kind": "time", "seconds": 900}, "inclinationPercent": 1.0, "heartRateTarget": {"minBpm": 145, "maxBpm": 158}, "regulationResponsiveness": "NORMAL"},
+                {"kind": "step", "id": "s4j3-cooldown", "type": "COOL_DOWN", "duration": {"kind": "time", "seconds": 600}, "targetSpeedKmh": 5.0, "inclinationPercent": 0.0}
+            ]
+        }
+    ]
+}

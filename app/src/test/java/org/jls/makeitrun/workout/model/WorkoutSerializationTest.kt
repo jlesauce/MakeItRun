@@ -2,6 +2,7 @@ package org.jls.makeitrun.workout.model
 
 import org.jls.makeitrun.di.DataModule
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Test
 
 class WorkoutSerializationTest {
@@ -42,6 +43,20 @@ class WorkoutSerializationTest {
         val decoded = json.decodeFromString<List<WorkoutElement>>(encoded)
 
         assertEquals(elements, decoded)
+    }
+
+    @Test
+    fun `a repeat block saved before the option existed keeps every repetition whole`() {
+        val encoded = """
+            [{"kind":"repeat","id":"block","repetitions":3,"steps":[
+              {"kind":"step","id":"fast","type":"RUN","duration":{"kind":"time","seconds":60}}
+            ]}]
+        """.trimIndent()
+
+        val decoded = json.decodeFromString<List<WorkoutElement>>(encoded)
+
+        assertFalse((decoded.single() as RepeatBlock).skipLastStepOnFinalRepetition)
+        assertEquals(3, WorkoutPlan.flatten(decoded).size)
     }
 
     @Test

@@ -47,6 +47,70 @@ class WorkoutPlanTest {
     }
 
     @Test
+    fun `the closing recovery can be dropped from the final repetition`() {
+        val elements = listOf(
+            RepeatBlock(
+                id = "block",
+                repetitions = 3,
+                steps = listOf(
+                    step("fast", StepType.RUN, StepDuration.Distance(400), 15.0),
+                    step("easy", StepType.RECOVER, StepDuration.Distance(200), 7.0),
+                ),
+                skipLastStepOnFinalRepetition = true,
+            ),
+            step("cooldown", StepType.COOL_DOWN, StepDuration.Time(300), 7.0),
+        )
+
+        val resolved = WorkoutPlan.flatten(elements)
+
+        assertEquals(
+            listOf("fast", "easy", "fast", "easy", "fast", "cooldown"),
+            resolved.map { it.step.id },
+        )
+    }
+
+    @Test
+    fun `the earlier repetitions keep their closing recovery`() {
+        val elements = listOf(
+            RepeatBlock(
+                id = "block",
+                repetitions = 4,
+                steps = listOf(
+                    step("fast", StepType.RUN, StepDuration.Distance(400), 15.0),
+                    step("easy", StepType.RECOVER, StepDuration.Distance(200), 7.0),
+                ),
+                skipLastStepOnFinalRepetition = true,
+            ),
+        )
+
+        val resolved = WorkoutPlan.flatten(elements)
+
+        assertEquals(7, resolved.size)
+        assertEquals(Repetition(current = 4, total = 4), resolved.last().repetition)
+        assertEquals("fast", resolved.last().step.id)
+    }
+
+    @Test
+    fun `the dropped step is left out of the estimated totals`() {
+        val block = RepeatBlock(
+            id = "block",
+            repetitions = 4,
+            steps = listOf(
+                step("fast", StepType.RUN, StepDuration.Distance(400), 12.0),
+                step("easy", StepType.RECOVER, StepDuration.Distance(200), 6.0),
+            ),
+        )
+
+        val complete = WorkoutPlan.summarize(listOf(block))
+        val trimmed = WorkoutPlan.summarize(
+            listOf(block.copy(skipLastStepOnFinalRepetition = true))
+        )
+
+        assertEquals(complete.stepCount - 1, trimmed.stepCount)
+        assertEquals(complete.distanceMeters - 200, trimmed.distanceMeters)
+    }
+
+    @Test
     fun `a standalone step has no repetition number`() {
         val resolved = WorkoutPlan.flatten(
             listOf(step("run", StepType.RUN, StepDuration.Time(60), 10.0))

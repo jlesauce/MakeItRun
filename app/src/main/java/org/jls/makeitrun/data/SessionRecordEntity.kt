@@ -1,5 +1,6 @@
 package org.jls.makeitrun.data
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -48,6 +49,7 @@ data class SessionSampleEntity(
     val smoothedBpm: Int?,
     val targetSpeedKmh: Double?,
     val zone: String?,
+    @ColumnInfo(defaultValue = "0") val stepExtraSeconds: Int = 0,
 )
 
 data class SessionSummaryRow(

@@ -89,6 +89,7 @@ class SessionRecorder internal constructor(
         targetSpeedKmh = progress.regulation?.targetSpeedKmh
             ?: progress.currentStep.step.targetSpeedKmh,
         zone = progress.regulation?.zone?.takeIf { it != ZoneStatus.UNKNOWN }?.name,
+        stepExtraSeconds = progress.stepExtraSeconds,
     )
 
     private fun HeartRateSample?.beatsPerMinuteAt(nowElapsedMillis: Long): Int? {

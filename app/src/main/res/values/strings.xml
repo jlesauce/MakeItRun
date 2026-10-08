@@ -137,6 +137,8 @@
     <string name="session_leave_stop">Stop the workout</string>
     <string name="session_leave_continue">Keep going</string>
     <string name="session_skip_step">Next step</string>
+    <string name="session_extend_step">+1\'</string>
+    <string name="session_step_extended">Extended by %1$d min</string>
     <string name="session_stop">Stop</string>
     <string name="session_finished">Session complete</string>
     <string name="session_finished_summary">%1$s covered in %2$s</string>

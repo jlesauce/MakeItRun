@@ -109,6 +109,7 @@ fun SessionScreen(
                 onPause = viewModel::pause,
                 onResume = viewModel::resume,
                 onSkip = viewModel::skipStep,
+                onExtend = viewModel::extendStep,
                 onStop = {
                     viewModel.stop()
                     onFinished()
@@ -124,6 +125,7 @@ fun SessionScreen(
                 onPause = viewModel::pause,
                 onResume = viewModel::resume,
                 onSkip = viewModel::skipStep,
+                onExtend = viewModel::extendStep,
                 onStop = {
                     viewModel.stop()
                     onFinished()
@@ -204,6 +206,7 @@ private fun ColumnScope.RunningSession(
     onPause: () -> Unit,
     onResume: () -> Unit,
     onSkip: () -> Unit,
+    onExtend: () -> Unit,
     onStop: () -> Unit,
 ) {
     if (isTreadmillStopped) {
@@ -251,6 +254,18 @@ private fun ColumnScope.RunningSession(
             },
             style = MaterialTheme.typography.displayMedium,
         )
+
+        if (StepProgress.canExtend(progress.currentStep.step)) {
+            OutlinedButton(
+                onClick = onExtend,
+                enabled = !isPaused && !isTreadmillStopped,
+            ) {
+                Text(
+                    text = stringResource(R.string.session_extend_step),
+                    style = MaterialTheme.typography.titleLarge,
+                )
+            }
+        }
 
         if (heartRate.isSensorLinked && progress.currentStep.step.heartRateTarget == null) {
             HeartRateReading(heartRate.beatsPerMinute)

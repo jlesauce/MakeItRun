@@ -111,6 +111,21 @@ class SessionStatisticsTest {
         assertEquals(2.0, report.inclinationPercent!!, DELTA)
     }
 
+    @Test
+    fun `an extended step reports the extra time it was given`() {
+        val samples = listOf(
+            sample(second = 0, meters = 0, stepIndex = 0),
+            sample(second = 1, meters = 3, stepIndex = 0, extraSeconds = 60),
+            sample(second = 2, meters = 6, stepIndex = 0, extraSeconds = 120),
+            sample(second = 3, meters = 9, stepIndex = 1),
+        )
+
+        val reports = SessionStatistics.steps(plan(2), samples)
+
+        assertEquals(listOf(120, 0), reports.map { it.extraSeconds })
+        assertEquals(listOf(3, 1), reports.map { it.elapsedSeconds })
+    }
+
     private fun plan(size: Int) = List(size) { index ->
         ResolvedStep(
             step = WorkoutStep(
@@ -131,6 +146,7 @@ class SessionStatisticsTest {
         inclination: Double? = null,
         beats: Int? = null,
         zone: ZoneStatus? = null,
+        extraSeconds: Int = 0,
     ) = SessionSample(
         elapsedSeconds = second,
         distanceMeters = meters,
@@ -141,6 +157,7 @@ class SessionStatisticsTest {
         smoothedBpm = null,
         targetSpeedKmh = null,
         zone = zone,
+        stepExtraSeconds = extraSeconds,
     )
 
     private companion object {

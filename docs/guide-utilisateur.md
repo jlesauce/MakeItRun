@@ -188,6 +188,10 @@ Trois commandes sont à portée de pouce :
   le temps en pause n'est pas décompté.
 - **Étape suivante** passe à l'étape d'après. Pratique quand l'échauffement est déjà fait, ou quand
   une série tourne mal.
+- **+1'**, à côté du temps restant, ajoute une minute à l'étape en cours. Vous pouvez appuyer
+  plusieurs fois pour prolonger davantage. L'entraînement enregistré n'est pas modifié : seule la
+  séance du jour dure plus longtemps, et l'historique indique « Prolongée de N min » sur l'étape
+  concernée. Le bouton n'apparaît que sur les étapes au temps, pas sur celles à la distance.
 - **Arrêt** met fin à la séance et stoppe le tapis.
 
 ### L'écran reste verrouillé sur la séance

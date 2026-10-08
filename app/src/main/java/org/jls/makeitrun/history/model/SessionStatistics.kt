@@ -50,6 +50,7 @@ object SessionStatistics {
             index = index,
             planned = planned,
             elapsedSeconds = samples.size,
+            extraSeconds = samples.maxOf { it.stepExtraSeconds },
             distanceMeters = distanceMeters,
             averageSpeedKmh = speeds.takeIf { it.isNotEmpty() }?.average(),
             inclinationPercent = inclinations.mostFrequent(),

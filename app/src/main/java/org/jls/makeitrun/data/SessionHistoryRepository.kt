@@ -95,6 +95,7 @@ class SessionHistoryRepository @Inject constructor(
             stepIndex = last.stepIndex,
             stepElapsedSeconds = last.elapsedSeconds - stepStart.elapsedSeconds,
             stepDistanceMeters = last.distanceMeters - stepStart.distanceMeters,
+            stepExtraSeconds = last.stepExtraSeconds,
             completedStepsSeconds = stepStart.elapsedSeconds,
             distanceMeters = last.distanceMeters,
         )
@@ -196,6 +197,7 @@ class SessionHistoryRepository @Inject constructor(
         smoothedBpm = smoothedBpm,
         targetSpeedKmh = targetSpeedKmh,
         zone = zone?.let { name -> ZoneStatus.entries.firstOrNull { it.name == name } },
+        stepExtraSeconds = stepExtraSeconds,
     )
 
     private companion object {

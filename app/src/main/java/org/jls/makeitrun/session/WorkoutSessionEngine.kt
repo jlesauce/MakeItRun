@@ -9,6 +9,8 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.getAndUpdate
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jls.makeitrun.data.SessionHistoryRepository
@@ -33,6 +35,7 @@ import kotlin.math.min
 private data class StepOffsets(
     val elapsedSeconds: Int = 0,
     val distanceMeters: Int = 0,
+    val extraSeconds: Int = 0,
 )
 
 private class DistanceTracker(private val offsetMeters: Int = 0) {
@@ -65,6 +68,7 @@ class WorkoutSessionEngine @Inject constructor(
     private var speedGuardJob: Job? = null
     private val pauseRequested = MutableStateFlow(false)
     private val skipRequested = MutableStateFlow(false)
+    private val extensionsRequested = MutableStateFlow(0)
 
     private var startedWorkoutId: Long? = null
 
@@ -93,6 +97,7 @@ class WorkoutSessionEngine @Inject constructor(
         speedGuardJob?.cancel()
         pauseRequested.value = false
         skipRequested.value = false
+        extensionsRequested.value = 0
         beltHasMoved = false
         beltStoppedSinceMillis = null
         lowestSpeedSincePauseKmh = null
@@ -120,6 +125,12 @@ class WorkoutSessionEngine @Inject constructor(
 
     fun skipStep() {
         if (_state.value is SessionState.Running) skipRequested.value = true
+    }
+
+    fun extendStep() {
+        val running = _state.value as? SessionState.Running ?: return
+        if (!StepProgress.canExtend(running.progress.currentStep.step)) return
+        extensionsRequested.update { it + 1 }
     }
 
     fun stop() {
@@ -196,6 +207,7 @@ class WorkoutSessionEngine @Inject constructor(
                         StepOffsets(
                             elapsedSeconds = resumeFrom?.stepElapsedSeconds ?: 0,
                             distanceMeters = resumeFrom?.stepDistanceMeters ?: 0,
+                            extraSeconds = resumeFrom?.stepExtraSeconds ?: 0,
                         )
                     } else {
                         StepOffsets()
@@ -253,6 +265,8 @@ class WorkoutSessionEngine @Inject constructor(
         val stepDistance = DistanceTracker(stepOffsets.distanceMeters)
         val stepStartedAt = SystemClock.elapsedRealtime()
         skipRequested.value = false
+        extensionsRequested.value = 0
+        var extraSeconds = stepOffsets.extraSeconds
         var pausedMillis = 0L
         var pauseStartedAt: Long? = null
         var pauseCommandSent = false
@@ -288,6 +302,17 @@ class WorkoutSessionEngine @Inject constructor(
             val treadmillDistance = treadmillDistance()
             val coveredMeters = stepDistance.update(treadmillDistance)
 
+            val extensions = extensionsRequested.getAndUpdate { 0 }
+            if (extensions > 0) {
+                extraSeconds += extensions * StepProgress.EXTENSION_SECONDS
+                Timber.i(
+                    "Etape %d sur %d prolongee, %d s ajoutees au total",
+                    index + 1,
+                    steps.size,
+                    extraSeconds,
+                )
+            }
+
             if (regulator != null && !paused) {
                 regulation = regulator.update(now, heartRateClient.sample.value)
                     .also { applyRegulation(it) }
@@ -301,8 +326,19 @@ class WorkoutSessionEngine @Inject constructor(
                 stepCount = steps.size,
                 stepElapsedSeconds = elapsedSeconds,
                 stepCoveredMeters = coveredMeters,
-                remaining = StepProgress.remaining(resolved.step, elapsedSeconds, coveredMeters),
-                stepFraction = StepProgress.fraction(resolved.step, elapsedSeconds, coveredMeters),
+                stepExtraSeconds = extraSeconds,
+                remaining = StepProgress.remaining(
+                    resolved.step,
+                    elapsedSeconds,
+                    coveredMeters,
+                    extraSeconds,
+                ),
+                stepFraction = StepProgress.fraction(
+                    resolved.step,
+                    elapsedSeconds,
+                    coveredMeters,
+                    extraSeconds,
+                ),
                 totalElapsedSeconds = completedStepsSeconds + elapsedSeconds,
                 totalDistanceMeters = sessionDistance.update(treadmillDistance),
                 liveData = client.treadmillData.value,
@@ -325,7 +361,7 @@ class WorkoutSessionEngine @Inject constructor(
             }
 
             if (!paused &&
-                StepProgress.isComplete(resolved.step, elapsedSeconds, coveredMeters)
+                StepProgress.isComplete(resolved.step, elapsedSeconds, coveredMeters, extraSeconds)
             ) {
                 return elapsedSeconds
             }

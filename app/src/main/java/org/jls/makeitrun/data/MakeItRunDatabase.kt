@@ -11,7 +11,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         SessionRecordEntity::class,
         SessionSampleEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = true,
 )
 abstract class MakeItRunDatabase : RoomDatabase() {
@@ -66,6 +66,15 @@ abstract class MakeItRunDatabase : RoomDatabase() {
             }
         }
 
-        val MIGRATIONS: Array<Migration> = arrayOf(ADD_SESSION_HISTORY)
+        private val ADD_STEP_EXTENSIONS = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "ALTER TABLE `session_samples` " +
+                        "ADD COLUMN `stepExtraSeconds` INTEGER NOT NULL DEFAULT 0"
+                )
+            }
+        }
+
+        val MIGRATIONS: Array<Migration> = arrayOf(ADD_SESSION_HISTORY, ADD_STEP_EXTENSIONS)
     }
 }

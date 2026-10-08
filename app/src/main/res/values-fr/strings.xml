@@ -136,6 +136,8 @@
     <string name="session_leave_stop">Arrêter l\'activité</string>
     <string name="session_leave_continue">Continuer la séance</string>
     <string name="session_skip_step">Étape suivante</string>
+    <string name="session_extend_step">+1\'</string>
+    <string name="session_step_extended">Prolongée de %1$d min</string>
     <string name="session_stop">Arrêt</string>
     <string name="session_finished">Séance terminée</string>
     <string name="session_finished_summary">%1$s parcourus en %2$s</string>

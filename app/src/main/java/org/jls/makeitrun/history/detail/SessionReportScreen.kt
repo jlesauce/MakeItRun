@@ -47,6 +47,7 @@ import org.jls.makeitrun.history.SessionFormats
 import org.jls.makeitrun.history.model.SessionOutcome
 import org.jls.makeitrun.history.model.SessionReport
 import org.jls.makeitrun.history.model.SessionStepReport
+import org.jls.makeitrun.session.StepProgress
 import org.jls.makeitrun.session.ZoneStatus
 import org.jls.makeitrun.workout.WorkoutStepLabels
 import org.jls.makeitrun.workout.model.Formats
@@ -287,6 +288,16 @@ private fun StepRow(step: SessionStepReport, showPace: Boolean) {
                         ),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.outline,
+                    )
+                }
+                if (step.extraSeconds > 0) {
+                    Text(
+                        text = stringResource(
+                            R.string.session_step_extended,
+                            step.extraSeconds / StepProgress.EXTENSION_SECONDS,
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary,
                     )
                 }
                 Text(

@@ -40,6 +40,22 @@ class SessionHistoryRepositoryTest {
     }
 
     @Test
+    fun `the resume point keeps the minutes added to the interrupted step`() = runTest {
+        val dao = FakeSessionHistoryDao(
+            records = listOf(record()),
+            samples = listOf(
+                sample(second = 0, meters = 0, stepIndex = 0),
+                sample(second = 301, meters = 903, stepIndex = 1),
+                sample(second = 960, meters = 3_000, stepIndex = 1, extraSeconds = 120),
+            ),
+        )
+
+        val point = SessionHistoryRepository(dao, json).findResumePoint(SESSION_ID)!!
+
+        assertEquals(120, point.stepExtraSeconds)
+    }
+
+    @Test
     fun `the time before the step and the time inside it add up to the session total`() = runTest {
         val dao = FakeSessionHistoryDao(
             records = listOf(record()),
@@ -207,7 +223,12 @@ class SessionHistoryRepositoryTest {
         energyKcal = null,
     )
 
-    private fun sample(second: Int, meters: Int, stepIndex: Int) = SessionSampleEntity(
+    private fun sample(
+        second: Int,
+        meters: Int,
+        stepIndex: Int,
+        extraSeconds: Int = 0,
+    ) = SessionSampleEntity(
         sessionId = SESSION_ID,
         elapsedSeconds = second,
         distanceMeters = meters,
@@ -218,6 +239,7 @@ class SessionHistoryRepositoryTest {
         smoothedBpm = null,
         targetSpeedKmh = null,
         zone = null,
+        stepExtraSeconds = extraSeconds,
     )
 
     private companion object {

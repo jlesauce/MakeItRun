@@ -58,6 +58,25 @@ class StepProgressTest {
         assertEquals(1f, StepProgress.fraction(step, 250, 0), DELTA)
     }
 
+    @Test
+    fun `an extended timed step lasts its planned time plus the extra seconds`() {
+        val step = step(StepDuration.Time(60))
+
+        assertFalse(StepProgress.isComplete(step, 60, 0, extraSeconds = 60))
+        assertTrue(StepProgress.isComplete(step, 120, 0, extraSeconds = 60))
+        assertEquals(
+            StepRemaining.Seconds(65),
+            StepProgress.remaining(step, elapsedSeconds = 55, coveredMeters = 0, extraSeconds = 60),
+        )
+        assertEquals(0.5f, StepProgress.fraction(step, 60, 0, extraSeconds = 60), DELTA)
+    }
+
+    @Test
+    fun `only timed steps can be extended`() {
+        assertTrue(StepProgress.canExtend(step(StepDuration.Time(60))))
+        assertFalse(StepProgress.canExtend(step(StepDuration.Distance(400))))
+    }
+
     private fun step(duration: StepDuration) = WorkoutStep(
         id = "step",
         type = StepType.RUN,

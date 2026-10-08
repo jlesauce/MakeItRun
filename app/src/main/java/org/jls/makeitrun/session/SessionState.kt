@@ -11,6 +11,7 @@ data class SessionProgress(
     val stepCount: Int,
     val stepElapsedSeconds: Int,
     val stepCoveredMeters: Int,
+    val stepExtraSeconds: Int = 0,
     val remaining: StepRemaining,
     val stepFraction: Float,
     val totalElapsedSeconds: Int,

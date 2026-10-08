@@ -41,12 +41,14 @@ data class SessionSample(
     val smoothedBpm: Int?,
     val targetSpeedKmh: Double?,
     val zone: ZoneStatus?,
+    val stepExtraSeconds: Int = 0,
 )
 
 data class SessionStepReport(
     val index: Int,
     val planned: ResolvedStep?,
     val elapsedSeconds: Int,
+    val extraSeconds: Int = 0,
     val distanceMeters: Int,
     val averageSpeedKmh: Double?,
     val inclinationPercent: Double?,

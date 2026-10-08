@@ -9,6 +9,7 @@ data class SessionResumePoint(
     val stepIndex: Int,
     val stepElapsedSeconds: Int,
     val stepDistanceMeters: Int,
+    val stepExtraSeconds: Int = 0,
     val completedStepsSeconds: Int,
     val distanceMeters: Int,
 )

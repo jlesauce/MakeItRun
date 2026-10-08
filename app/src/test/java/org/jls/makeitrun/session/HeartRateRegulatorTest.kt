@@ -5,6 +5,7 @@ import org.jls.makeitrun.heartrate.HeartRateMeasurement
 import org.jls.makeitrun.heartrate.HeartRateSample
 import org.jls.makeitrun.workout.model.HeartRateTarget
 import org.jls.makeitrun.workout.model.RegulationResponsiveness
+import org.jls.makeitrun.workout.model.StepDuration
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -278,6 +279,131 @@ class HeartRateRegulatorTest {
         assertEquals(8.0, speed, DELTA)
     }
 
+    @Test
+    fun `a long step starts at the speed of the lower bound rather than the centre`() {
+        val wide = HeartRateRegulator.initialSpeedKmh(
+            target = HeartRateTarget(minBpm = 130, maxBpm = 198),
+            speedRange = SPEED_RANGE,
+            currentSpeedKmh = 6.0,
+            start = HeartRateStart.APPROACH_FROM_BELOW,
+        )
+        val narrow = HeartRateRegulator.initialSpeedKmh(
+            target = HeartRateTarget(minBpm = 130, maxBpm = 140),
+            speedRange = SPEED_RANGE,
+            currentSpeedKmh = 6.0,
+            start = HeartRateStart.APPROACH_FROM_BELOW,
+        )
+
+        assertEquals(narrow, wide, DELTA)
+        assertTrue("$narrow km/h should sit around a jog", narrow in 9.0..10.5)
+        assertTrue(wide < HeartRateRegulator.startingSpeedKmh(
+            target = HeartRateTarget(minBpm = 130, maxBpm = 198),
+            speedRange = SPEED_RANGE,
+        ))
+    }
+
+    @Test
+    fun `a long step already faster than the lower bound keeps that speed`() {
+        val speed = HeartRateRegulator.initialSpeedKmh(
+            target = HeartRateTarget(minBpm = 130, maxBpm = 140),
+            speedRange = SPEED_RANGE,
+            currentSpeedKmh = 11.0,
+            start = HeartRateStart.APPROACH_FROM_BELOW,
+        )
+
+        assertEquals(11.0, speed, DELTA)
+    }
+
+    @Test
+    fun `a short interval jumps to the centre even from a slow belt`() {
+        val speed = HeartRateRegulator.initialSpeedKmh(
+            target = HeartRateTarget(minBpm = 130, maxBpm = 140),
+            speedRange = SPEED_RANGE,
+            currentSpeedKmh = 6.0,
+            start = HeartRateStart.CATCH_UP,
+        )
+
+        assertEquals(
+            HeartRateRegulator.startingSpeedKmh(
+                target = HeartRateTarget(minBpm = 130, maxBpm = 140),
+                speedRange = SPEED_RANGE,
+            ),
+            speed,
+            DELTA,
+        )
+        assertTrue(speed > HeartRateRegulator.initialSpeedKmh(
+            target = HeartRateTarget(minBpm = 130, maxBpm = 140),
+            speedRange = SPEED_RANGE,
+            currentSpeedKmh = 6.0,
+            start = HeartRateStart.APPROACH_FROM_BELOW,
+        ))
+    }
+
+    @Test
+    fun `a step inside a repeat is treated as an interval`() {
+        assertEquals(
+            HeartRateStart.CATCH_UP,
+            HeartRateRegulator.startFor(StepDuration.Time(900), inRepeatBlock = true),
+        )
+        assertEquals(
+            HeartRateStart.APPROACH_FROM_BELOW,
+            HeartRateRegulator.startFor(StepDuration.Time(900), inRepeatBlock = false),
+        )
+        assertEquals(
+            HeartRateStart.CATCH_UP,
+            HeartRateRegulator.startFor(StepDuration.Time(60), inRepeatBlock = false),
+        )
+        assertEquals(
+            HeartRateStart.CATCH_UP,
+            HeartRateRegulator.startFor(StepDuration.Distance(400), inRepeatBlock = false),
+        )
+        assertEquals(
+            HeartRateStart.APPROACH_FROM_BELOW,
+            HeartRateRegulator.startFor(StepDuration.Distance(3000), inRepeatBlock = false),
+        )
+    }
+
+    @Test
+    fun `a heart that is already climbing toward the zone is left alone on a long step`() {
+        val regulator = regulator(initialSpeedKmh = 9.3, holdWhileRising = true)
+        var corrections = 0
+        var now = 0L
+        var bpm = 100
+        while (now <= 40_000L) {
+            val outcome = regulator.update(now, sample(bpm, now))
+            if (outcome.speedChanged) corrections++
+            now += SAMPLE_PERIOD
+            bpm += 1
+        }
+
+        assertEquals(0, corrections)
+    }
+
+    @Test
+    fun `a stuck heart rate still gets a nudge on a long step`() {
+        val regulator = regulator(initialSpeedKmh = 9.3, holdWhileRising = true)
+
+        val run = regulator.feed(
+            bpm = 115,
+            untilMillis = HeartRateRegulator.FIRST_WAIT_FROM_BELOW_MILLIS + SAMPLE_PERIOD,
+        )
+
+        assertEquals(1, run.corrections)
+        assertEquals(9.8, run.last.targetSpeedKmh, DELTA)
+    }
+
+    @Test
+    fun `a long step waits longer than an interval before the first nudge`() {
+        val longStep = regulator(initialSpeedKmh = 9.3, holdWhileRising = true)
+        val interval = regulator(initialSpeedKmh = 9.3, holdWhileRising = false)
+
+        val tooSoon = longStep.feed(bpm = 115, untilMillis = HeartRateRegulator.WARM_UP_MILLIS + SAMPLE_PERIOD)
+        val intervalReady = interval.feed(bpm = 115, untilMillis = HeartRateRegulator.WARM_UP_MILLIS + SAMPLE_PERIOD)
+
+        assertEquals(0, tooSoon.corrections)
+        assertEquals(1, intervalReady.corrections)
+    }
+
     private fun HeartRateRegulator.feed(
         bpm: Int,
         fromMillis: Long = 0L,
@@ -306,11 +432,15 @@ class HeartRateRegulatorTest {
         receivedAtElapsedMillis = atMillis,
     )
 
-    private fun regulator(initialSpeedKmh: Double) = HeartRateRegulator(
+    private fun regulator(
+        initialSpeedKmh: Double,
+        holdWhileRising: Boolean = false,
+    ) = HeartRateRegulator(
         target = TARGET,
         speedRange = SPEED_RANGE,
         responsiveness = RegulationResponsiveness.NORMAL,
         initialSpeedKmh = initialSpeedKmh,
+        holdWhileRising = holdWhileRising,
     )
 
     private companion object {

@@ -1,6 +1,8 @@
 package org.jls.makeitrun.workout.editor
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -8,17 +10,24 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RangeSlider
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -29,8 +38,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import org.jls.makeitrun.R
 import org.jls.makeitrun.ftms.TreadmillCapabilities
@@ -54,6 +67,7 @@ fun StepEditorSheet(
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val focusManager = LocalFocusManager.current
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Column(
@@ -187,7 +201,13 @@ fun StepEditorSheet(
                 TextButton(onClick = onDismiss, modifier = Modifier.weight(1f)) {
                     Text(stringResource(R.string.editor_cancel))
                 }
-                Button(onClick = onConfirm, modifier = Modifier.weight(1f)) {
+                Button(
+                    onClick = {
+                        focusManager.clearFocus()
+                        onConfirm()
+                    },
+                    modifier = Modifier.weight(1f),
+                ) {
                     Text(stringResource(R.string.editor_done))
                 }
             }
@@ -205,18 +225,12 @@ private fun TargetPicker(
 ) {
     val speedRange = capabilities.speedRange ?: TreadmillCapabilities.UNKNOWN.speedRange!!
     var isTyping by remember { mutableStateOf(false) }
+    val speedStep = speedRange.increment.takeIf { it > 0.0 } ?: 0.1
 
     Row(
         modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
+        horizontalArrangement = Arrangement.End,
     ) {
-        TextButton(onClick = { isTyping = true }) {
-            Text(
-                text = Formats.target(draft.targetSpeedKmh, showPace, freeLabel = ""),
-                style = MaterialTheme.typography.headlineSmall,
-            )
-        }
         TextButton(onClick = onToggleUnit) {
             Text(
                 stringResource(
@@ -232,23 +246,34 @@ private fun TargetPicker(
         val slowest = bounds.last
         val current = Pace.secondsPerKmFrom(draft.targetSpeedKmh) ?: fastest
 
-        Slider(
+        StepperSlider(
             value = current.toFloat().coerceIn(fastest.toFloat(), slowest.toFloat()),
             onValueChange = { seconds ->
-                val rounded = (seconds / PACE_STEP_SECONDS).roundToInt() * PACE_STEP_SECONDS
-                val speed = Pace.speedKmhFrom(rounded) ?: return@Slider
+                val rounded = snappedValue(
+                    seconds,
+                    fastest.toFloat(),
+                    slowest.toFloat(),
+                    PACE_STEP_SECONDS.toFloat(),
+                ).roundToInt()
+                val speed = Pace.speedKmhFrom(rounded) ?: return@StepperSlider
                 onDraftChange(draft.copy(targetSpeedKmh = speedRange.coerce(speed)))
             },
             valueRange = fastest.toFloat()..slowest.toFloat(),
+            step = PACE_STEP_SECONDS.toFloat(),
+            valueLabel = Formats.target(draft.targetSpeedKmh, showPace = true, freeLabel = ""),
+            onValueClick = { isTyping = true },
         )
     } else {
-        Slider(
+        StepperSlider(
             value = draft.targetSpeedKmh.toFloat()
                 .coerceIn(speedRange.minimum.toFloat(), speedRange.maximum.toFloat()),
             onValueChange = {
                 onDraftChange(draft.copy(targetSpeedKmh = speedRange.coerce(it.toDouble())))
             },
             valueRange = speedRange.minimum.toFloat()..speedRange.maximum.toFloat(),
+            step = speedStep.toFloat(),
+            valueLabel = Formats.target(draft.targetSpeedKmh, showPace = false, freeLabel = ""),
+            onValueClick = { isTyping = true },
         )
     }
 
@@ -356,6 +381,7 @@ private fun TargetInputDialog(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HeartRateZonePicker(
     draft: StepDraft,
@@ -364,22 +390,61 @@ private fun HeartRateZonePicker(
     onDraftChange: (StepDraft) -> Unit,
 ) {
     val speedRange = capabilities.speedRange ?: TreadmillCapabilities.UNKNOWN.speedRange!!
-    var isTyping by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
+    var minText by remember { mutableStateOf(draft.heartRateMinBpm.toString()) }
+    var maxText by remember { mutableStateOf(draft.heartRateMaxBpm.toString()) }
+    var minFocused by remember { mutableStateOf(false) }
+    var maxFocused by remember { mutableStateOf(false) }
 
-    TextButton(onClick = { isTyping = true }) {
-        Text(
-            text = stringResource(
-                R.string.editor_heart_rate_zone,
-                draft.heartRateMinBpm,
-                draft.heartRateMaxBpm,
-            ),
-            style = MaterialTheme.typography.headlineSmall,
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        NumberField(
+            value = if (minFocused) minText else draft.heartRateMinBpm.toString(),
+            label = stringResource(R.string.editor_heart_rate_min),
+            onValueChange = { input ->
+                minText = input
+                applyHeartRateMin(input, draft, onDraftChange)
+            },
+            modifier = Modifier
+                .weight(1f)
+                .onFocusChanged { focus ->
+                    if (focus.isFocused) {
+                        minFocused = true
+                        minText = draft.heartRateMinBpm.toString()
+                    } else if (minFocused) {
+                        minFocused = false
+                        minText = commitHeartRateMin(minText, draft, onDraftChange)
+                    }
+                },
+        )
+        NumberField(
+            value = if (maxFocused) maxText else draft.heartRateMaxBpm.toString(),
+            label = stringResource(R.string.editor_heart_rate_max),
+            onValueChange = { input ->
+                maxText = input
+                applyHeartRateMax(input, draft, onDraftChange)
+            },
+            modifier = Modifier
+                .weight(1f)
+                .onFocusChanged { focus ->
+                    if (focus.isFocused) {
+                        maxFocused = true
+                        maxText = draft.heartRateMaxBpm.toString()
+                    } else if (maxFocused) {
+                        maxFocused = false
+                        maxText = commitHeartRateMax(maxText, draft, onDraftChange)
+                    }
+                },
         )
     }
 
     RangeSlider(
         value = draft.heartRateMinBpm.toFloat()..draft.heartRateMaxBpm.toFloat(),
         onValueChange = { range ->
+            focusManager.clearFocus()
             val maximum = range.endInclusive.roundToInt().coerceIn(
                 HeartRateTarget.LOWEST_BPM + HeartRateTarget.NARROWEST_WIDTH_BPM,
                 HeartRateTarget.HIGHEST_BPM,
@@ -394,7 +459,12 @@ private fun HeartRateZonePicker(
     )
 
     Text(
-        text = stringResource(R.string.editor_target_manual_hint),
+        text = stringResource(
+            R.string.editor_heart_rate_range_bounds,
+            HeartRateTarget.LOWEST_BPM,
+            HeartRateTarget.HIGHEST_BPM,
+            HeartRateTarget.NARROWEST_WIDTH_BPM,
+        ),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.outline,
     )
@@ -404,84 +474,6 @@ private fun HeartRateZonePicker(
         color = MaterialTheme.colorScheme.outline,
     )
     Text(text = boundsLabel(speedRange, showPace), style = MaterialTheme.typography.bodySmall)
-
-    if (isTyping) {
-        HeartRateZoneInputDialog(
-            minBpm = draft.heartRateMinBpm,
-            maxBpm = draft.heartRateMaxBpm,
-            onDismiss = { isTyping = false },
-            onConfirm = { minimum, maximum ->
-                onDraftChange(draft.copy(heartRateMinBpm = minimum, heartRateMaxBpm = maximum))
-                isTyping = false
-            },
-        )
-    }
-}
-
-@Composable
-private fun HeartRateZoneInputDialog(
-    minBpm: Int,
-    maxBpm: Int,
-    onDismiss: () -> Unit,
-    onConfirm: (Int, Int) -> Unit,
-) {
-    var minimum by remember { mutableStateOf(minBpm.toString()) }
-    var maximum by remember { mutableStateOf(maxBpm.toString()) }
-
-    val resolved = resolveHeartRateZone(minimum.toIntOrNull(), maximum.toIntOrNull())
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.editor_heart_rate_manual)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NumberField(
-                        value = minimum,
-                        label = stringResource(R.string.editor_heart_rate_min),
-                        onValueChange = { minimum = it },
-                        modifier = Modifier.weight(1f),
-                    )
-                    NumberField(
-                        value = maximum,
-                        label = stringResource(R.string.editor_heart_rate_max),
-                        onValueChange = { maximum = it },
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-
-                Text(
-                    text = stringResource(
-                        R.string.editor_heart_rate_range_bounds,
-                        HeartRateTarget.LOWEST_BPM,
-                        HeartRateTarget.HIGHEST_BPM,
-                        HeartRateTarget.NARROWEST_WIDTH_BPM,
-                    ),
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { resolved?.let { onConfirm(it.first, it.second) } },
-                enabled = resolved != null,
-            ) {
-                Text(stringResource(R.string.editor_done))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.editor_cancel))
-            }
-        },
-    )
-}
-
-private fun resolveHeartRateZone(minimum: Int?, maximum: Int?): Pair<Int, Int>? {
-    if (minimum == null || maximum == null) return null
-    if (maximum - minimum < HeartRateTarget.NARROWEST_WIDTH_BPM) return null
-    if (minimum < HeartRateTarget.LOWEST_BPM || maximum > HeartRateTarget.HIGHEST_BPM) return null
-    return minimum to maximum
 }
 
 private fun paceBounds(speedRange: TreadmillCapabilities.ValueRange): IntRange {
@@ -557,13 +549,15 @@ private fun InclinationPicker(
     onDraftChange: (StepDraft) -> Unit,
 ) {
     val current = draft.inclinationPercent ?: 0.0
-    Text(text = "%.1f %%".format(current), style = MaterialTheme.typography.titleMedium)
-    Slider(
+    val step = range.increment.takeIf { it > 0.0 } ?: 0.5
+    StepperSlider(
         value = current.toFloat().coerceIn(range.minimum.toFloat(), range.maximum.toFloat()),
         onValueChange = {
             onDraftChange(draft.copy(inclinationPercent = range.coerce(it.toDouble())))
         },
         valueRange = range.minimum.toFloat()..range.maximum.toFloat(),
+        step = step.toFloat(),
+        valueLabel = "%.1f %%".format(current),
     )
 }
 
@@ -592,13 +586,169 @@ private fun NumberField(
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val focusManager = LocalFocusManager.current
     OutlinedTextField(
         value = value,
         onValueChange = { input -> onValueChange(input.filter { it.isDigit() }.take(5)) },
         label = { Text(label) },
         singleLine = true,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Number,
+            imeAction = ImeAction.Done,
+        ),
+        keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
         modifier = modifier,
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun StepperSlider(
+    value: Float,
+    onValueChange: (Float) -> Unit,
+    valueRange: ClosedFloatingPointRange<Float>,
+    step: Float,
+    valueLabel: String,
+    onValueClick: (() -> Unit)? = null,
+) {
+    val snapped = snappedValue(value, valueRange.start, valueRange.endInclusive, step)
+    val start = minOf(valueRange.start, valueRange.endInclusive)
+    val end = maxOf(valueRange.start, valueRange.endInclusive)
+    val canSlide = end - start >= step / 2f
+    val interactionSource = remember { MutableInteractionSource() }
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        IconButton(
+            onClick = { onValueChange(snappedValue(snapped - step, start, end, step)) },
+            enabled = snapped > start + step / 2f,
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Remove,
+                contentDescription = stringResource(R.string.editor_decrease),
+            )
+        }
+        Box(
+            modifier = Modifier.weight(1f),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (onValueClick != null) {
+                TextButton(onClick = onValueClick) {
+                    Text(text = valueLabel, style = MaterialTheme.typography.headlineSmall)
+                }
+            } else {
+                Text(text = valueLabel, style = MaterialTheme.typography.headlineSmall)
+            }
+        }
+        IconButton(
+            onClick = { onValueChange(snappedValue(snapped + step, start, end, step)) },
+            enabled = snapped < end - step / 2f,
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Add,
+                contentDescription = stringResource(R.string.editor_increase),
+            )
+        }
+    }
+
+    if (canSlide) {
+        Slider(
+            value = snapped.coerceIn(start, end),
+            onValueChange = { onValueChange(snappedValue(it, start, end, step)) },
+            valueRange = start..end,
+            interactionSource = interactionSource,
+            thumb = {
+                SliderDefaults.Thumb(
+                    interactionSource = interactionSource,
+                    thumbSize = DpSize(28.dp, 28.dp),
+                )
+            },
+        )
+    }
+}
+
+private fun applyHeartRateMin(
+    raw: String,
+    draft: StepDraft,
+    onDraftChange: (StepDraft) -> Unit,
+) {
+    val parsed = raw.toIntOrNull() ?: return
+    if (parsed !in HeartRateTarget.LOWEST_BPM..HeartRateTarget.HIGHEST_BPM) return
+    val (minimum, maximum) = heartRateAfterMinChange(parsed, draft.heartRateMaxBpm)
+    onDraftChange(draft.copy(heartRateMinBpm = minimum, heartRateMaxBpm = maximum))
+}
+
+private fun applyHeartRateMax(
+    raw: String,
+    draft: StepDraft,
+    onDraftChange: (StepDraft) -> Unit,
+) {
+    val parsed = raw.toIntOrNull() ?: return
+    if (parsed !in HeartRateTarget.LOWEST_BPM..HeartRateTarget.HIGHEST_BPM) return
+    val (minimum, maximum) = heartRateAfterMaxChange(parsed, draft.heartRateMinBpm)
+    onDraftChange(draft.copy(heartRateMinBpm = minimum, heartRateMaxBpm = maximum))
+}
+
+private fun commitHeartRateMin(
+    raw: String,
+    draft: StepDraft,
+    onDraftChange: (StepDraft) -> Unit,
+): String {
+    val parsed = raw.toIntOrNull() ?: return draft.heartRateMinBpm.toString()
+    val (minimum, maximum) = heartRateAfterMinChange(parsed, draft.heartRateMaxBpm)
+    onDraftChange(draft.copy(heartRateMinBpm = minimum, heartRateMaxBpm = maximum))
+    return minimum.toString()
+}
+
+private fun commitHeartRateMax(
+    raw: String,
+    draft: StepDraft,
+    onDraftChange: (StepDraft) -> Unit,
+): String {
+    val parsed = raw.toIntOrNull() ?: return draft.heartRateMaxBpm.toString()
+    val (minimum, maximum) = heartRateAfterMaxChange(parsed, draft.heartRateMinBpm)
+    onDraftChange(draft.copy(heartRateMinBpm = minimum, heartRateMaxBpm = maximum))
+    return maximum.toString()
+}
+
+private fun heartRateAfterMinChange(requested: Int, currentMax: Int): Pair<Int, Int> {
+    val minimum = requested.coerceIn(
+        HeartRateTarget.LOWEST_BPM,
+        HeartRateTarget.HIGHEST_BPM - HeartRateTarget.NARROWEST_WIDTH_BPM,
+    )
+    val maximum = currentMax.coerceIn(
+        minimum + HeartRateTarget.NARROWEST_WIDTH_BPM,
+        HeartRateTarget.HIGHEST_BPM,
+    )
+    return minimum to maximum
+}
+
+private fun heartRateAfterMaxChange(requested: Int, currentMin: Int): Pair<Int, Int> {
+    val maximum = requested.coerceIn(
+        HeartRateTarget.LOWEST_BPM + HeartRateTarget.NARROWEST_WIDTH_BPM,
+        HeartRateTarget.HIGHEST_BPM,
+    )
+    val minimum = currentMin.coerceIn(
+        HeartRateTarget.LOWEST_BPM,
+        maximum - HeartRateTarget.NARROWEST_WIDTH_BPM,
+    )
+    return minimum to maximum
+}
+
+private fun snappedValue(
+    value: Float,
+    rangeStart: Float,
+    rangeEnd: Float,
+    step: Float,
+): Float {
+    val clamped = value.coerceIn(minOf(rangeStart, rangeEnd), maxOf(rangeStart, rangeEnd))
+    if (step <= 0f) return clamped
+    val stepsFromStart = ((clamped - rangeStart) / step).roundToInt()
+    return (rangeStart + stepsFromStart * step).coerceIn(
+        minOf(rangeStart, rangeEnd),
+        maxOf(rangeStart, rangeEnd),
     )
 }
 

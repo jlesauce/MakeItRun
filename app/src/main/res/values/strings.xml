@@ -106,7 +106,9 @@
     <string name="editor_pace_bounds">Your treadmill accepts %1$s to %2$s min/km.</string>
     <string name="editor_target_manual_pace">Enter the pace</string>
     <string name="editor_target_manual_speed">Enter the speed</string>
-    <string name="editor_target_manual_hint">Tap the value to type it in.</string>
+    <string name="editor_target_manual_hint">The + and − buttons nudge by one step. Tap the value to type it in.</string>
+    <string name="editor_decrease">Decrease</string>
+    <string name="editor_increase">Increase</string>
     <string name="editor_speed_field">km/h</string>
     <string name="editor_done">Confirm</string>
     <string name="editor_cancel">Cancel</string>

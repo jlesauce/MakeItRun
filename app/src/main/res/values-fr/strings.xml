@@ -105,7 +105,9 @@
     <string name="editor_pace_bounds">Votre tapis accepte de %1$s à %2$s min/km.</string>
     <string name="editor_target_manual_pace">Saisir l\'allure</string>
     <string name="editor_target_manual_speed">Saisir la vitesse</string>
-    <string name="editor_target_manual_hint">Touchez la valeur pour la saisir au clavier.</string>
+    <string name="editor_target_manual_hint">Les boutons + et − ajustent d\'un cran. Touchez la valeur pour la saisir au clavier.</string>
+    <string name="editor_decrease">Diminuer</string>
+    <string name="editor_increase">Augmenter</string>
     <string name="editor_speed_field">km/h</string>
     <string name="editor_done">Valider</string>
     <string name="editor_cancel">Annuler</string>

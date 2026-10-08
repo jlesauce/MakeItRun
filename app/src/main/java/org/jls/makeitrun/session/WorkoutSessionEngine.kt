@@ -257,7 +257,7 @@ class WorkoutSessionEngine @Inject constructor(
         var pauseStartedAt: Long? = null
         var pauseCommandSent = false
 
-        val regulator = startRegulation(resolved.step, capabilities, responsiveness)
+        val regulator = startRegulation(resolved, capabilities, responsiveness)
         var regulation: RegulationOutcome? = null
 
         while (true) {
@@ -333,28 +333,38 @@ class WorkoutSessionEngine @Inject constructor(
     }
 
     private suspend fun startRegulation(
-        step: WorkoutStep,
+        resolved: ResolvedStep,
         capabilities: TreadmillCapabilities?,
         responsiveness: RegulationResponsiveness,
     ): HeartRateRegulator? {
+        val step = resolved.step
         val target = step.heartRateTarget ?: return null
         val speedRange = capabilities?.speedRange ?: TreadmillCapabilities.UNKNOWN.speedRange!!
         val stepResponsiveness = step.regulationResponsiveness ?: responsiveness
-        val initialSpeed = HeartRateRegulator.startingSpeedKmh(target, speedRange)
+        val start = HeartRateRegulator.startFor(step.duration, resolved.repetition != null)
+        val currentSpeed = client.treadmillData.value?.instantaneousSpeedKmh
+        val initialSpeed = HeartRateRegulator.initialSpeedKmh(
+            target = target,
+            speedRange = speedRange,
+            currentSpeedKmh = currentSpeed,
+            start = start,
+        )
 
         val regulator = HeartRateRegulator(
             target = target,
             speedRange = speedRange,
             responsiveness = stepResponsiveness,
             initialSpeedKmh = initialSpeed,
+            holdWhileRising = start == HeartRateStart.APPROACH_FROM_BELOW,
         )
         Timber.i(
-            "Etape %s : zone %d-%d bpm, correction %s, depart a %.1f km/h",
+            "Etape %s : zone %d-%d bpm, correction %s, depart a %.1f km/h (%s)",
             step.type,
             target.minBpm,
             target.maxBpm,
             stepResponsiveness,
             initialSpeed,
+            start.name,
         )
         setSpeed(initialSpeed)
         return regulator

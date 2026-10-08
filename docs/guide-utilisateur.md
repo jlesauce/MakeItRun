@@ -121,10 +121,13 @@ Un échauffement se pense en minutes, une fraction se pense souvent en mètres.
 **La consigne.** C'est le cœur du réglage, avec trois possibilités :
 
 - **Imposée** — vous fixez l'allure ou la vitesse, et l'application l'envoie au tapis dès le début de
-  l'étape. Les bornes acceptées par votre tapis vous sont rappelées sous le champ. Touchez la valeur
-  pour la saisir au clavier plutôt qu'au curseur.
+  l'étape. Les bornes acceptées par votre tapis vous sont rappelées sous le champ. Les boutons **+**
+  et **−** ajustent d'un cran ; le curseur sert au réglage approximatif. Touchez la valeur pour la
+  saisir au clavier.
 - **Fréquence cardiaque** — vous fixez une zone en battements par minute, et l'application cherche
-  elle-même la vitesse qui vous y maintient. Voir [la section dédiée](#les-étapes-pilotées-par-la-fréquence-cardiaque).
+  elle-même la vitesse qui vous y maintient. Le minimum et le maximum sont des champs éditables, à
+  gauche et à droite, et un curseur unique ajuste la zone. Voir
+  [la section dédiée](#les-étapes-pilotées-par-la-fréquence-cardiaque).
 - **Libre** — l'application n'envoie aucune consigne et vous laissez la vitesse telle quelle. Utile
   pour un retour au calme que vous voulez gérer à la main.
 
@@ -221,9 +224,15 @@ Pourquoi c'est mieux qu'une vitesse fixe : votre endurance fondamentale ne se co
 vitesse un jour de forme et un lendemain de nuit courte, ni au début et à la fin d'une longue sortie
 où la dérive cardiaque s'installe. La zone, elle, ne bouge pas.
 
-**Comment l'application s'y prend.** Elle corrige lentement et par petits pas, parce que le cœur met
-jusqu'à une minute à répondre à un changement d'allure. Corriger plus vite ferait osciller la vitesse
-sans jamais se stabiliser. Trois franchises sont possibles :
+**Comment l'application s'y prend.** Au début d'un palier long — trois minutes ou plus, hors bloc
+répété — elle ne vise pas le centre de la zone. Elle part de la vitesse qui correspond à la **borne
+basse** (environ 10 km/h pour 130 bpm, même si le maximum a été mal saisi trop haut), puis n'accélère
+que si le cœur ne monte pas tout seul. Un intervalle court, ou une étape dans un bloc répété, part
+plus franchement vers le centre de la zone, pour que l'effort monte vite.
+
+Ensuite elle corrige lentement et par petits pas, parce que le cœur met jusqu'à une minute à
+répondre à un changement d'allure. Corriger plus vite ferait osciller la vitesse sans jamais se
+stabiliser. Trois franchises sont possibles :
 
 | Franchise | Correction | Comportement |
 | --- | --- | --- |

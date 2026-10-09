@@ -242,24 +242,20 @@ private fun TargetPicker(
 
     if (showPace) {
         val bounds = paceBounds(speedRange)
-        val fastest = bounds.first
-        val slowest = bounds.last
-        val current = Pace.secondsPerKmFrom(draft.targetSpeedKmh) ?: fastest
+        val fastestSpeed = speedRange.coerce(Pace.speedKmhFrom(bounds.first) ?: speedRange.maximum)
+        val slowestSpeed = speedRange.coerce(Pace.speedKmhFrom(bounds.last) ?: speedRange.minimum)
+        val slowdownRange = (fastestSpeed - slowestSpeed).coerceAtLeast(0.0)
 
         StepperSlider(
-            value = current.toFloat().coerceIn(fastest.toFloat(), slowest.toFloat()),
-            onValueChange = { seconds ->
-                val rounded = snappedValue(
-                    seconds,
-                    fastest.toFloat(),
-                    slowest.toFloat(),
-                    PACE_STEP_SECONDS.toFloat(),
-                ).roundToInt()
-                val speed = Pace.speedKmhFrom(rounded) ?: return@StepperSlider
-                onDraftChange(draft.copy(targetSpeedKmh = speedRange.coerce(speed)))
+            value = (fastestSpeed - draft.targetSpeedKmh)
+                .coerceIn(0.0, slowdownRange)
+                .toFloat(),
+            onValueChange = { slowdown ->
+                val speed = speedRange.coerce(fastestSpeed - slowdown)
+                onDraftChange(draft.copy(targetSpeedKmh = speed.coerceIn(slowestSpeed, fastestSpeed)))
             },
-            valueRange = fastest.toFloat()..slowest.toFloat(),
-            step = PACE_STEP_SECONDS.toFloat(),
+            valueRange = 0f..slowdownRange.toFloat(),
+            step = speedStep.toFloat(),
             valueLabel = Formats.target(draft.targetSpeedKmh, showPace = true, freeLabel = ""),
             onValueClick = { isTyping = true },
         )
@@ -751,8 +747,6 @@ private fun snappedValue(
         maxOf(rangeStart, rangeEnd),
     )
 }
-
-private const val PACE_STEP_SECONDS = 5
 
 private const val FASTEST_PACE_SECONDS = 150
 private const val SLOWEST_PACE_SECONDS = 900

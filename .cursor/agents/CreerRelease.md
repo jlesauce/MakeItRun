@@ -142,8 +142,12 @@ git push origin vMAJOR.MINOR
 ```
 
 Le push du tag déclenche `.github/workflows/release.yml`, qui revérifie que le
-tag colle à `gradle.properties`, reconstruit l'APK signé en CI, et crée ou met
-à jour la release GitHub.
+tag colle à `gradle.properties`, relance les tests, reconstruit l'APK signé en
+CI, et crée ou met à jour la release GitHub seulement si tout est vert.
+
+Un lancement manuel du même workflow sur ce commit fait la même publication
+sans poser le tag à la main : il lit `vMAJOR.MINOR` dans `gradle.properties`,
+et il s'arrête si ce tag pointe déjà sur un autre commit.
 
 Crée tout de suite la release avec l'APK local, pour ne pas attendre la CI :
 

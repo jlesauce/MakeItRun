@@ -102,9 +102,15 @@ tester la connexion.
 
 ## Publication
 
-Un workflow GitHub Actions construit, signe et publie l'APK lorsqu'un tag `v*` est poussé. Il refuse
-un tag qui ne correspond pas à la version déclarée dans `gradle.properties`, et le matériel de
-signature est reconstitué depuis les secrets du dépôt puis effacé en fin de course.
+Le workflow CI lance les tests unitaires à chaque push et sur chaque pull request. Le contrôle
+« Tests unitaires » est exigé sur `main` : une pull request ne se merge pas tant qu'il n'est pas
+vert.
+
+Le workflow Release se lance à la main, ou lorsqu'un tag `v*` est poussé. Il relance les tests,
+construit l'APK signé, puis publie la release seulement si tout a réussi. Le tag doit correspondre
+à la version déclarée dans `gradle.properties`. Un lancement manuel publie cette version sur le
+commit choisi, et refuse si le tag pointe déjà sur un autre commit. Le matériel de signature est
+reconstitué depuis les secrets du dépôt puis effacé en fin de course.
 
 ## Structure du projet
 

@@ -122,8 +122,10 @@ Un échauffement se pense en minutes, une fraction se pense souvent en mètres.
 
 - **Imposée** — vous fixez l'allure ou la vitesse, et l'application l'envoie au tapis dès le début de
   l'étape. Les bornes acceptées par votre tapis vous sont rappelées sous le champ. Les boutons **+**
-  et **−** ajustent d'un cran ; le curseur sert au réglage approximatif. Touchez la valeur pour la
-  saisir au clavier.
+  et **−** ajustent d'un cran ; le curseur sert au réglage approximatif. Un cran correspond au plus
+  petit écart de vitesse que votre tapis sait appliquer : chaque appui change donc vraiment la
+  consigne, même aux allures lentes où quelques secondes au kilomètre ne représentent presque rien.
+  Touchez la valeur pour la saisir au clavier.
 - **Fréquence cardiaque** — vous fixez une zone en battements par minute, et l'application cherche
   elle-même la vitesse qui vous y maintient. Le minimum et le maximum sont des champs éditables, à
   gauche et à droite, et un curseur unique ajuste la zone. Voir
@@ -263,7 +265,8 @@ Touchez une séance pour ouvrir son rapport détaillé :
 
 - **Un graphe** superposant la vitesse et la fréquence cardiaque sur toute la durée de la séance. On y
   lit d'un coup d'œil la dérive cardiaque d'une sortie longue, ou la façon dont la fréquence retombe
-  entre deux fractions.
+  entre deux fractions. La vitesse est graduée à gauche, la fréquence cardiaque à droite, sur une
+  grille commune, et l'axe du temps est repéré en minutes rondes.
 - **Les chiffres clés** : durée, distance, fréquences moyenne et maximale, temps passé dans la zone,
   énergie dépensée.
 - **Le détail étape par étape**, qui compare le prévu au réalisé. C'est là qu'on voit si le tapis a

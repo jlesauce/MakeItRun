@@ -1,5 +1,15 @@
 # Notes de version
 
+## v0.3
+
+Une version de rodage, qui rend la séance plus souple et la régulation cardiaque plus confortable.
+
+- **Prolonger une étape** : le bouton +1' ajoute une minute à l'étape en cours sans toucher à l'entraînement. La prolongation survit à une reprise et apparaît dans le rapport.
+- **Départ en douceur en zone cardiaque** : un long palier démarre à l'allure de la borne basse et n'accélère que si le cœur ne monte pas. Les fractions visent le centre de la zone plus vite.
+- **Éditeur de zone cardiaque** : le minimum et le maximum se saisissent au clavier, et le curseur de zone est de retour.
+- **Allure au cran près** : les boutons +/− et le curseur avancent d'une vitesse réellement applicable par le tapis. Fini les appuis sans effet aux allures lentes.
+- **Rapport de séance plus lisible** : le graphe gradue la vitesse à gauche et la fréquence cardiaque à droite, avec des repères en minutes rondes.
+
 ## v0.2
 
 Première version destinée aux utilisateurs. Make It Run pilote un tapis de course Bluetooth FTMS pour y dérouler des entraînements automatiquement.

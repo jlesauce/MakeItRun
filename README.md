@@ -25,21 +25,22 @@ besoin de surveiller le chrono ni de régler la machine à la main entre deux fr
   répétition.
 - **Étapes pilotées par la fréquence cardiaque** : plutôt qu'une vitesse, l'étape vise une zone de
   battements et l'application cherche elle-même l'allure qui vous y maintient, par petits pas
-  espacés pour laisser le cœur répondre. La franchise de correction se règle globalement et se
+  espacés pour laisser le cœur répondre. Les longs paliers démarrent en douceur depuis la borne
+  basse, les intervalles visent le centre de la zone plus franchement. La franchise de correction se règle globalement et se
   surcharge étape par étape.
 - **Capteur cardiaque Bluetooth** : ceinture pectorale ou montre diffusant sa fréquence, avec
   reconnexion automatique et repli sûr quand le signal se tait.
 - **Exécution pilotée** : décompte de départ, consigne envoyée automatiquement à chaque changement
   d'étape et renvoyée si la machine l'ignore, temps et distance restants, étape suivante annoncée,
-  pause, saut d'étape et arrêt.
+  pause, saut d'étape, prolongation d'une minute de l'étape en cours et arrêt.
 - **Suivi du tapis** : arrêter la courroie depuis la console de la machine met la séance en pause, et
   la relancer la fait repartir. Toute la séance peut se mener depuis les boutons du tapis.
 - **Séance en arrière-plan** : un service de premier plan maintient l'entraînement en vie et affiche
   sa progression dans une notification, même si l'écran est quitté ou verrouillé. L'écran de séance
   est verrouillé tant qu'elle dure, et le tapis est arrêté si l'application est fermée.
-- **Historique et rapport de séance** : un relevé par seconde, un graphe superposant vitesse et
-  fréquence cardiaque, le détail étape par étape comparant le prévu au réalisé, et les compteurs
-  affichés par le tapis.
+- **Historique et rapport de séance** : un relevé par seconde, un graphe gradué superposant vitesse et
+  fréquence cardiaque, le détail étape par étape comparant le prévu au réalisé (prolongations
+  comprises), et les compteurs affichés par le tapis.
 - **Reprise d'une séance interrompue** : dans les trente minutes, une séance arrêtée en cours de
   route repart à l'étape où elle s'était arrêtée et prolonge l'enregistrement d'origine.
 - **Mesures en direct** : vitesse, allure, distance, temps, inclinaison, fréquence cardiaque et
